@@ -156,6 +156,7 @@ public class MainActivity extends AppCompatActivity {
         titleView.setText(imageModel.title);
         titleView.setTextSize(18);
 
+        //Some Text
         // 3) CustomImageLayout
         CustomImageLayout customLayout = new CustomImageLayout(this);
         customLayout.setImageBitmap(bitmap);
