@@ -3,6 +3,7 @@ package com.example.checkinset;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -45,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_CAMERA_PERMISSION = 1001;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
+    private static final int REQUEST_PICK_IMAGE = 2;
     private String currentPhotoPath;
     private String currentImageTitle;
 
@@ -108,6 +110,9 @@ public class MainActivity extends AppCompatActivity {
         if (id == R.id.action_capture_image) {
                 checkCameraPermissionAndOpenCamera();
                 return true;
+        } else if (id == R.id.action_pick_image) {
+            openGallery();
+            return true;
         } else if (id == R.id.action_delete_image) {
                 isDeletingImage = true;
                 Toast.makeText(this, "Tippe nun auf das Bild, das du löschen möchtest.", Toast.LENGTH_SHORT).show();
@@ -116,6 +121,12 @@ public class MainActivity extends AppCompatActivity {
         } else {
             return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void openGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        startActivityForResult(intent, REQUEST_PICK_IMAGE);
     }
 
     /**
@@ -303,21 +314,45 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            // Neues Bild in unser Datenmodell aufnehmen
             ImageModel newImg = new ImageModel();
             newImg.path = currentPhotoPath;
             newImg.title = currentImageTitle;
 
-            // Datenmodell aktualisieren
             dataModel.images.add(newImg);
-
-            // UI aktualisieren
             addImageToUI(newImg);
-
-            // JSON speichern
             DataStorage.saveData(this, dataModel);
+        } else if (requestCode == REQUEST_PICK_IMAGE && resultCode == RESULT_OK && data != null) {
+            Uri selectedImageUri = data.getData();
+            if (selectedImageUri != null) {
+                String imagePath = getRealPathFromURI(selectedImageUri);
+                if (imagePath != null) {
+                    ImageModel newImg = new ImageModel();
+                    newImg.path = imagePath;
+                    newImg.title = "Galerie-Bild"; // Standard-Titel, falls kein eigener eingegeben wird
+
+                    dataModel.images.add(newImg);
+                    addImageToUI(newImg);
+                    DataStorage.saveData(this, dataModel);
+                } else {
+                    Toast.makeText(this, "Fehler beim Laden des Bildes", Toast.LENGTH_SHORT).show();
+                }
+            }
         }
+    }
+
+    private String getRealPathFromURI(Uri uri) {
+        String[] projection = {android.provider.MediaStore.Images.Media.DATA};
+        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
+        if (cursor != null) {
+            int columnIndex = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            String filePath = cursor.getString(columnIndex);
+            cursor.close();
+            return filePath;
+        }
+        return null;
     }
 
     /**
