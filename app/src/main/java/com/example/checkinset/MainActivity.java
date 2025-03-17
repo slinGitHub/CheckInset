@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import android.animation.ValueAnimator;
 
 public class MainActivity extends AppCompatActivity implements ImageManager.ImageResultCallback {
 
@@ -65,6 +66,8 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     // Global gespeicherter aktuell ausgewählter Punkt und zugehöriges Layout
     private PointModel currentPoint;
     private CustomImageLayout currentLayout;
+
+    private ValueAnimator pulseAnimator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -256,7 +259,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             public void onGlobalLayout() {
                 customLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                 for (PointModel p : imageModel.points) {
-                    addPointView(customLayout, p.xPercent, p.yPercent, p.color);
+                    addPointView(customLayout, p.xPercent, p.yPercent, p.color, p);
                 }
                 updateAllPointsColors();
             }
@@ -298,6 +301,21 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show();
     }
 
+    @Override
+    public void onBackPressed() {
+        if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+
+            // Falls ein Punkt animiert wird, stoppe die Animation
+            if (currentPoint != null && currentLayout != null) {
+                View pointView = getPointView(currentLayout, currentPoint);
+                if (pointView != null) stopPulseAnimation(pointView);
+            }
+            return; // Verhindert, dass die App geschlossen wird
+        }
+        super.onBackPressed();
+    }
+
     private void createPoint(CustomImageLayout layout, float xPercent, float yPercent) {
         ImageModel imgModel = layoutToImageMap.get(layout);
         if (imgModel == null) return;
@@ -309,12 +327,12 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         p.color = 0;
 
         imgModel.points.add(p);
-        addPointView(layout, xPercent, yPercent, p.color);
+        addPointView(layout, xPercent, yPercent, p.color, p);
         updateAllPointsColors();
         DataStorage.saveData(this, dataModel);
     }
 
-    private void addPointView(CustomImageLayout layout, float xPercent, float yPercent, int color) {
+    private void addPointView(CustomImageLayout layout, float xPercent, float yPercent, int color, PointModel point) {
         int size = (int) (16 * getResources().getDisplayMetrics().density);
         View pointView = new View(this);
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(size, size);
@@ -323,6 +341,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         lp.leftMargin = actualX;
         lp.topMargin = actualY;
         pointView.setBackgroundColor(color);
+        pointView.setTag(point); // Speichert das PointModel als Tag!
         layout.addView(pointView, lp);
     }
 
@@ -354,14 +373,48 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
      * Zeigt die Details des ausgewählten Punktes im Bottom Sheet an.
      */
     private void showPointDetails(PointModel point, CustomImageLayout layout) {
+        if (bottomSheetBehavior == null) {
+            Log.e("BottomSheet", "❌ Fehler: BottomSheetBehavior ist null!");
+            return;
+        }
 
+        // Setze Text für den ausgewählten Punkt
         tvTimestamp.setText("Erstellt am: " + point.timestamp);
         int absX = (int) (layout.getWidth() * point.xPercent);
         int absY = (int) (layout.getHeight() * point.yPercent);
         tvCoordinates.setText("X: " + absX + ", Y: " + absY);
 
+        // Bottom Sheet anzeigen
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+
+        // Falls ein anderer Punkt bereits pulsiert, Animation stoppen
+        if (currentPoint != null && currentLayout != null && currentPoint != point) {
+            View oldPointView = getPointView(currentLayout, currentPoint);
+            if (oldPointView != null) stopPulseAnimation(oldPointView);
+        }
+
+        // Neuer aktueller Punkt
+        currentPoint = point;
+        currentLayout = layout;
+
+        // Starte die Animation für den neuen Punkt
+        View pointView = getPointView(layout, point);
+        if (pointView != null) startPulseAnimation(pointView);
     }
+
+    private View getPointView(CustomImageLayout layout, PointModel point) {
+        for (int i = 0; i < layout.getChildCount(); i++) {
+            View child = layout.getChildAt(i);
+            if (child.getTag() instanceof PointModel) {
+                PointModel taggedPoint = (PointModel) child.getTag();
+                if (taggedPoint == point) {
+                    return child;
+                }
+            }
+        }
+        return null;
+    }
+
 
     private void updateAllPointsColors() {
         List<PointModel> allPoints = new ArrayList<>();
@@ -423,4 +476,31 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_270) return 270;
         return 0;
     }
+
+    private void startPulseAnimation(View pointView) {
+        if (pulseAnimator != null && pulseAnimator.isRunning()) {
+            pulseAnimator.cancel();
+        }
+
+        pulseAnimator = ValueAnimator.ofFloat(1f, 1.5f, 1f);
+        pulseAnimator.setDuration(1000);
+        pulseAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        pulseAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        pulseAnimator.addUpdateListener(animation -> {
+            float scale = (float) animation.getAnimatedValue();
+            pointView.setScaleX(scale);
+            pointView.setScaleY(scale);
+        });
+
+        pulseAnimator.start();
+    }
+
+    private void stopPulseAnimation(View pointView) {
+        if (pulseAnimator != null) {
+            pulseAnimator.cancel();
+            pointView.setScaleX(1f);
+            pointView.setScaleY(1f);
+        }
+    }
+
 }

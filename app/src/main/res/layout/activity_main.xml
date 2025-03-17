@@ -58,6 +58,7 @@
         android:background="@android:color/white"
         android:padding="16dp"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
+        app:behavior_hideable="true"
         android:visibility="visible">
 
         <TextView
