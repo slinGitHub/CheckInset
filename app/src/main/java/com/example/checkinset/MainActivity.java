@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.InputType;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -25,6 +26,7 @@ import com.example.checkinset.model.DataModel;
 import com.example.checkinset.model.ImageModel;
 import com.example.checkinset.model.PointModel;
 import com.example.checkinset.utils.DataStorage;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +56,16 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     private ImageManager imageManager;
     private String currentImageTitle;
 
+    // Bottom Sheet Komponenten
+    private LinearLayout bottomSheet;
+    private TextView tvTimestamp, tvCoordinates;
+    private Button btnDeletePoint;
+    private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
+
+    // Global gespeicherter aktuell ausgewählter Punkt und zugehöriges Layout
+    private PointModel currentPoint;
+    private CustomImageLayout currentLayout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,6 +77,33 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
         addPointButton = findViewById(R.id.addPointButton);
         imageContainer = findViewById(R.id.imageContainer);
+
+        //BottomSheet initialisieren
+        bottomSheet = findViewById(R.id.bottom_sheet);
+
+
+        tvTimestamp = findViewById(R.id.tvTimestamp);
+        tvCoordinates = findViewById(R.id.tvCoordinates);
+        btnDeletePoint = findViewById(R.id.btnDeletePoint);
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+
+        bottomSheet.post(() -> bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN));
+        bottomSheetBehavior.setPeekHeight(bottomSheet.getHeight());
+
+        // Aktion des Lösch-Buttons im Bottom Sheet
+        btnDeletePoint.setOnClickListener(v -> {
+            if (currentPoint != null && currentLayout != null) {
+                ImageModel imgModel = layoutToImageMap.get(currentLayout);
+                if (imgModel != null) {
+                    imgModel.points.remove(currentPoint);
+                    // UI neu aufbauen (alternativ: gezielt den Punkt entfernen)
+                    loadUIFromDataModel();
+                    DataStorage.saveData(MainActivity.this, dataModel);
+                    bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+                    Toast.makeText(MainActivity.this, "Punkt gelöscht.", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
 
         addPointButton.setOnClickListener(v -> {
             isAddingPoint = true;
@@ -80,6 +119,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
         // ImageManager initialisieren
         imageManager = new ImageManager(this, this);
+
     }
 
     @Override
@@ -167,13 +207,16 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         CustomImageLayout customLayout = new CustomImageLayout(this);
         customLayout.setImageBitmap(bitmap);
 
+        // TouchListener für das CustomImageLayout:
         customLayout.setOnTouchListener((view, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                // Falls das Bild gelöscht werden soll:
                 if (isDeletingImage) {
                     removeImage(customLayout);
                     isDeletingImage = false;
                     return true;
                 }
+                // Falls ein neuer Punkt gesetzt werden soll:
                 if (isAddingPoint) {
                     float xPercent = event.getX() / customLayout.getWidth();
                     float yPercent = event.getY() / customLayout.getHeight();
@@ -182,6 +225,19 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                     addPointButton.setEnabled(true);
                     return true;
                 }
+                // Sonst: Ermittle den am nächsten liegenden Punkt zum Klick
+                float xPercent = event.getX() / customLayout.getWidth();
+                float yPercent = event.getY() / customLayout.getHeight();
+                ImageModel imgModel = layoutToImageMap.get(customLayout);
+                if (imgModel != null && !imgModel.points.isEmpty()) {
+                    PointModel nearestPoint = getClosestPoint(imgModel, xPercent, yPercent);
+                    if (nearestPoint != null) {
+                        currentPoint = nearestPoint;
+                        currentLayout = customLayout;
+                        showPointDetails(nearestPoint, customLayout);
+                    }
+                }
+                return true;
             }
             return false;
         });
@@ -268,6 +324,43 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         lp.topMargin = actualY;
         pointView.setBackgroundColor(color);
         layout.addView(pointView, lp);
+    }
+
+    /**
+     * Ermittelt den Punkt, der den angegebenen x- und y-Prozentwerten am nächsten liegt.
+     *
+     * @param imageModel Das ImageModel, in dem die Punkte gespeichert sind.
+     * @param xPercent   Der x-Wert (0..1), an dem gesucht wird.
+     * @param yPercent   Der y-Wert (0..1), an dem gesucht wird.
+     * @return Der am nächsten liegende Punkt oder null, falls keine Punkte vorhanden.
+     */
+    private PointModel getClosestPoint(ImageModel imageModel, float xPercent, float yPercent) {
+        PointModel closestPoint = null;
+        double minDistance = Double.MAX_VALUE;
+
+        for (PointModel point : imageModel.points) {
+            double dx = xPercent - point.xPercent;
+            double dy = yPercent - point.yPercent;
+            double distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestPoint = point;
+            }
+        }
+        return closestPoint;
+    }
+
+    /**
+     * Zeigt die Details des ausgewählten Punktes im Bottom Sheet an.
+     */
+    private void showPointDetails(PointModel point, CustomImageLayout layout) {
+
+        tvTimestamp.setText("Erstellt am: " + point.timestamp);
+        int absX = (int) (layout.getWidth() * point.xPercent);
+        int absY = (int) (layout.getHeight() * point.yPercent);
+        tvCoordinates.setText("X: " + absX + ", Y: " + absY);
+
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
     }
 
     private void updateAllPointsColors() {
