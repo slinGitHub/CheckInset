@@ -10,10 +10,12 @@
         android:id="@+id/topAppBar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@android:color/holo_blue_dark"
+        android:background="#602D58"
         android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
         app:title="CheckInset"
-        android:layout_gravity="top" />
+        android:layout_gravity="top"
+        app:titleTextAppearance="@style/ToolbarTitleBold"
+        android:titleTextColor="@android:color/white" />
 
     <!-- Hauptinhalt: Ein vertikales Layout mit ScrollView -->
     <LinearLayout
@@ -21,7 +23,8 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:padding="16dp"
-        android:layout_marginTop="?attr/actionBarSize">
+        android:layout_marginTop="?attr/actionBarSize"
+        android:background="@color/black">
 
         <!-- ScrollView, in dem die dynamisch erzeugten Bildbereiche platziert werden -->
         <ScrollView
@@ -44,7 +47,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:src="@android:drawable/ic_menu_edit"
-        app:backgroundTint="@android:color/holo_blue_dark"
+        app:backgroundTint="#602D58"
         app:fabSize="normal"
         android:contentDescription="Punkte setzen"
         android:layout_gravity="bottom|end" />

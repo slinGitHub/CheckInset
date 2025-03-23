@@ -3,8 +3,15 @@ package com.example.checkinset;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -96,18 +103,129 @@ public class ImageManager {
         return image;
     }
 
+    private void processCapturedImage() {
+        // 1. Originalbild laden
+        Bitmap originalBitmap = BitmapFactory.decodeFile(currentPhotoPath);
+
+        // 2. Bild zuschneiden – hier rechteckiger Zuschnitt (SquarePadder liefert z.B. ein quadratisches Bild)
+        Bitmap croppedBitmap = SquarePadder.cropToSquare(originalBitmap);
+
+        // Das zugeschnittene Bild in Graustufen umwandeln
+        Bitmap grayscaleBitmap = toGrayscale(croppedBitmap, 50);
+
+        // 3. Bild auf Modell-Eingabegröße skalieren (hier: 512x512, passe ggf. an dein Modell an)
+        int modelWidth = 512;
+        int modelHeight = 512;
+        Bitmap resizedBitmap = Bitmap.createScaledBitmap(grayscaleBitmap, modelWidth, modelHeight, false);
+
+        // 4. Cartoonisierung: Erzeuge einen Cartoonizer (hier mit Modelltyp MODEL_DR) und führe die Inferenz durch
+        Cartoonizer cartoonizer = new Cartoonizer(activity, Cartoonizer.MODEL_DR);
+        Cartoonizer.InferenceResult result = cartoonizer.cartoonize(resizedBitmap);
+
+        // 5. Das Ergebnis-Bitmap entnehmen
+        Bitmap finalCartoon = result.outputBitmap;
+        // Optional: Anzeige des cartoonisierten Bildes in einer ImageView
+        // cartoonImageView.setImageBitmap(finalCartoon);
+
+        Bitmap warmCartoon = adjustWarmth(finalCartoon, 50);
+
+        // 6. Speichern des Cartoon-Bildes (saveBitmap muss das Bitmap speichern und den Dateipfad zurückgeben)
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String cartoonPath = saveBitmap(warmCartoon, "CARTOON_" + timeStamp + ".jpg");
+
+        // 7. Die Pfade (Originalbild & cartoonisiertes Bild) persistieren oder via Callback zurückgeben
+        //saveImagePaths(currentPhotoPath, cartoonPath);
+        // z.B. Rückgabe an den Aufrufer:
+        callback.onImageCaptured(cartoonPath, currentImageTitle);
+    }
+
+    private Bitmap adjustWarmth(Bitmap original, int warmthPercent) {
+        int width = original.getWidth();
+        int height = original.getHeight();
+        Bitmap warmBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(warmBitmap);
+        Paint paint = new Paint();
+
+        ColorMatrix colorMatrix = new ColorMatrix();
+
+        // Berechne den Wärme-Faktor (0 = keine Änderung, 1 = volle Wärme)
+        float warmthFactor = warmthPercent / 100f;
+
+        // Verstärke Rot- und Gelbtöne (indem Blau reduziert wird)
+        float[] warmMatrix = {
+                1.0f + (0.2f * warmthFactor), 0.0f, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f + (0.1f * warmthFactor), 0.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f - (0.1f * warmthFactor), 0.0f, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f, 0.0f
+        };
+
+        colorMatrix.set(warmMatrix);
+        ColorMatrixColorFilter filter = new ColorMatrixColorFilter(colorMatrix);
+        paint.setColorFilter(filter);
+        canvas.drawBitmap(original, 0, 0, paint);
+
+        return warmBitmap;
+    }
+
+    // Methode zur Umwandlung eines Bitmaps in Graustufen
+    private Bitmap toGrayscale(Bitmap original, int grayscalePercent) {
+        int width = original.getWidth();
+        int height = original.getHeight();
+        Bitmap grayscale = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(grayscale);
+        Paint paint = new Paint();
+
+        ColorMatrix colorMatrix = new ColorMatrix();
+        // Berechne den Sättigungsfaktor: 1.0 entspricht vollem Original, 0.0 ist komplett graustufig.
+        float saturation = 1f - (grayscalePercent / 100f);
+        colorMatrix.setSaturation(saturation);
+
+        ColorMatrixColorFilter filter = new ColorMatrixColorFilter(colorMatrix);
+        paint.setColorFilter(filter);
+        canvas.drawBitmap(original, 0, 0, paint);
+
+        return grayscale;
+    }
+
+    private String saveBitmap(Bitmap bitmap, String fileName) {
+        File storageDir = activity.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File imageFile = new File(storageDir, fileName);
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(imageFile);
+            // Komprimiere das Bitmap als JPEG (Qualität: 90)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            fos.flush();
+            return imageFile.getAbsolutePath();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     /**
      * Wird in onActivityResult() aufgerufen – hier unterscheiden wir Kamera und Galerie.
      */
     public void handleActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
-            callback.onImageCaptured(currentPhotoPath, currentImageTitle);
+            //callback.onImageCaptured(currentPhotoPath, currentImageTitle);
+            processCapturedImage();
         } else if (requestCode == REQUEST_PICK_IMAGE && resultCode == Activity.RESULT_OK && data != null) {
             Uri selectedUri = data.getData();
             if (selectedUri != null) {
                 String copiedPath = copyImageToAppStorage(selectedUri);
                 if (copiedPath != null) {
-                    callback.onImagePicked(copiedPath);
+                    currentPhotoPath = copiedPath;
+                    processCapturedImage();
+                    //callback.onImagePicked(copiedPath);
                 } else {
                     callback.onError("Fehler beim Kopieren des Bildes.");
                 }

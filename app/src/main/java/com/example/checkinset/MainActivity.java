@@ -206,6 +206,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         TextView titleView = new TextView(this);
         titleView.setText(imageModel.title);
         titleView.setTextSize(18);
+        titleView.setTextColor(0xFFFFFFFF); // Weißer Text
 
         CustomImageLayout customLayout = new CustomImageLayout(this);
         customLayout.setImageBitmap(bitmap);
