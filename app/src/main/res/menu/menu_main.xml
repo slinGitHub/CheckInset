@@ -19,4 +19,16 @@
         android:icon="@android:drawable/ic_menu_delete"
         android:showAsAction="never" />
 
+    <item
+        android:id="@+id/action_export_data"
+        android:title="Export Data"
+        android:icon="@android:drawable/ic_menu_delete"
+        android:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_import_data"
+        android:title="Import Data"
+        android:icon="@android:drawable/ic_menu_delete"
+        android:showAsAction="never" />
+
 </menu>
