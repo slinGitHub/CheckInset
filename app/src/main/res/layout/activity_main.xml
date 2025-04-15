@@ -46,10 +46,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:src="@android:drawable/ic_menu_edit"
-        app:backgroundTint="#602D58"
+        android:elevation="4dp"
+        android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="@color/DarkColor1"
         app:fabSize="normal"
-        android:contentDescription="Punkte setzen"
+        app:tint="@android:color/white"
+        android:contentDescription="Add Point"
         android:layout_gravity="bottom|end" />
 
     <!-- Bottom Sheet Layout für die Punktdetails -->
@@ -68,13 +70,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:elevation="8dp"
             android:layout_margin="16dp">
 
             <TextView
                 android:id="@+id/tvLabelTimestamp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Erstellt am:"
+                android:text="Created on"
                 android:textSize="16sp"
                 android:textColor="#000000"
                 android:layout_gravity="center_vertical" />
@@ -95,48 +98,57 @@
 
         <!-- X-Koordinate Zeile -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
+            android:layout_marginBottom="8dp"
+            android:weightSum="4">
+
             <TextView
                 android:id="@+id/tvLabelX"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="X:"
+                android:layout_weight="1"
+                android:text="X_left"
                 android:textSize="16sp"
                 android:textColor="#000000"
-                android:layout_gravity="center_vertical" />
+                android:gravity="center" />
+
             <TextView
                 android:id="@+id/tvCoordinateX"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_weight="1"
                 android:background="@drawable/clickable_box"
                 android:padding="8dp"
                 android:text="0"
                 android:textSize="16sp"
                 android:textColor="#000000"
+                android:gravity="center"
                 android:clickable="true"
                 android:focusable="true" />
+
             <TextView
                 android:id="@+id/tvLabelY"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Y:"
+                android:layout_weight="1"
+                android:text="Y_top"
                 android:textSize="16sp"
                 android:textColor="#000000"
-                android:layout_gravity="center_vertical" />
+                android:gravity="center" />
+
             <TextView
                 android:id="@+id/tvCoordinateY"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_weight="1"
                 android:background="@drawable/clickable_box"
                 android:padding="8dp"
-                android:text="0.00"
+                android:text="0"
                 android:textSize="16sp"
                 android:textColor="#000000"
+                android:gravity="center"
                 android:clickable="true"
                 android:focusable="true" />
         </LinearLayout>
@@ -146,8 +158,9 @@
             android:id="@+id/btnDeletePoint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Punkt löschen"
-            android:layout_marginTop="16dp"/>
+            android:text="Delete Point"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/rounded_button"/>
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

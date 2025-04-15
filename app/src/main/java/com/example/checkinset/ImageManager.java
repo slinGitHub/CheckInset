@@ -42,8 +42,9 @@ public class ImageManager {
     private String currentImageTitle;
 
     public interface ImageResultCallback {
-        void onImageCaptured(String imagePath, String imageTitle);
-        void onImagePicked(String imagePath);
+        void onImageCaptured(String imagePath, String originalImagePath, String imageTitle);
+
+        //void onImagePicked(String imagePath);
         void onError(String errorMessage);
     }
 
@@ -110,6 +111,10 @@ public class ImageManager {
         // 2. Bild zuschneiden – hier rechteckiger Zuschnitt (SquarePadder liefert z.B. ein quadratisches Bild)
         Bitmap croppedBitmap = SquarePadder.cropToSquare(originalBitmap);
 
+        // ➕ HIER: Speichere das unbearbeitete, nur zugeschnittene Bild
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String originalImagePath = saveBitmap(croppedBitmap, "CROPPED_" + timeStamp + ".jpg");
+
         // Das zugeschnittene Bild in Graustufen umwandeln
         Bitmap grayscaleBitmap = toGrayscale(croppedBitmap, 50);
 
@@ -130,13 +135,13 @@ public class ImageManager {
         Bitmap warmCartoon = adjustWarmth(finalCartoon, 50);
 
         // 6. Speichern des Cartoon-Bildes (saveBitmap muss das Bitmap speichern und den Dateipfad zurückgeben)
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String cartoonPath = saveBitmap(warmCartoon, "CARTOON_" + timeStamp + ".jpg");
+        timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String cartoonImagePath = saveBitmap(warmCartoon, "CARTOON_" + timeStamp + ".jpg");
 
         // 7. Die Pfade (Originalbild & cartoonisiertes Bild) persistieren oder via Callback zurückgeben
         //saveImagePaths(currentPhotoPath, cartoonPath);
         // z.B. Rückgabe an den Aufrufer:
-        callback.onImageCaptured(cartoonPath, currentImageTitle);
+        callback.onImageCaptured(cartoonImagePath,originalImagePath, currentImageTitle);
     }
 
     private Bitmap adjustWarmth(Bitmap original, int warmthPercent) {

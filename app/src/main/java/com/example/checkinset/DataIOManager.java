@@ -61,7 +61,8 @@ public class DataIOManager {
             for (ImageModel imgModel : dataModel.images) {
                 JSONObject imgJson = new JSONObject();
                 imgJson.put("title", imgModel.title);
-                imgJson.put("imageName", new File(imgModel.path).getName()); // Dateiname des Bildes
+                imgJson.put("imageName", new File(imgModel.originalImagePath).getName()); // Dateiname des Bildes
+                imgJson.put("cartoonImageName", new File(imgModel.cartoonImagePath).getName());
                 JSONArray pointsJson = new JSONArray();
                 for (PointModel point : imgModel.points) {
                     JSONObject pointJson = new JSONObject();
@@ -81,14 +82,24 @@ public class DataIOManager {
             zos.write(jsonData.getBytes());
             zos.closeEntry();
 
-            // Bilder in ZIP schreiben
             for (ImageModel imgModel : dataModel.images) {
-                Bitmap bitmap = BitmapFactory.decodeFile(imgModel.path);
-                if (bitmap != null) {
-                    String imageName = new File(imgModel.path).getName();
-                    ZipEntry imageEntry = new ZipEntry("images/" + imageName);
-                    zos.putNextEntry(imageEntry);
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, zos);
+                // Originalbild
+                Bitmap originalBitmap = BitmapFactory.decodeFile(imgModel.originalImagePath);
+                if (originalBitmap != null) {
+                    String originalName = new File(imgModel.originalImagePath).getName();
+                    ZipEntry originalEntry = new ZipEntry("images/" + originalName);
+                    zos.putNextEntry(originalEntry);
+                    originalBitmap.compress(Bitmap.CompressFormat.JPEG, 100, zos);
+                    zos.closeEntry();
+                }
+
+                // Cartoonbild
+                Bitmap cartoonBitmap = BitmapFactory.decodeFile(imgModel.cartoonImagePath);
+                if (cartoonBitmap != null) {
+                    String cartoonName = new File(imgModel.cartoonImagePath).getName();
+                    ZipEntry cartoonEntry = new ZipEntry("images/" + cartoonName);
+                    zos.putNextEntry(cartoonEntry);
+                    cartoonBitmap.compress(Bitmap.CompressFormat.JPEG, 100, zos);
                     zos.closeEntry();
                 }
             }
@@ -120,7 +131,10 @@ public class DataIOManager {
                         JSONObject imgJson = jsonArray.getJSONObject(i);
                         ImageModel imgModel = new ImageModel();
                         imgModel.title = imgJson.getString("title");
-                        imgModel.path = context.getExternalFilesDir(null) + "/temp_" + imgJson.getString("imageName");
+                        String originalName = imgJson.getString("originalImageName");
+                        String cartoonName = imgJson.getString("cartoonImageName");
+                        imgModel.originalImagePath = context.getExternalFilesDir(null) + "/temp_" + originalName;
+                        imgModel.cartoonImagePath = context.getExternalFilesDir(null) + "/temp_" + cartoonName;
                         JSONArray pointsJson = imgJson.getJSONArray("points");
                         for (int j = 0; j < pointsJson.length(); j++) {
                             JSONObject pointJson = pointsJson.getJSONObject(j);
@@ -145,8 +159,11 @@ public class DataIOManager {
                     }
                     // Bildpfad im DataModel aktualisieren
                     for (ImageModel imgModel : dataModel.images) {
-                        if (imgModel.path.endsWith("temp_" + imageName)) {
-                            imgModel.path = imageFile.getAbsolutePath();
+                        if (imgModel.originalImagePath.endsWith("temp_" + imageName)) {
+                            imgModel.originalImagePath = imageFile.getAbsolutePath();
+                            break;
+                        } else if (imgModel.cartoonImagePath.endsWith("temp_" + imageName)) {
+                            imgModel.cartoonImagePath = imageFile.getAbsolutePath();
                             break;
                         }
                     }

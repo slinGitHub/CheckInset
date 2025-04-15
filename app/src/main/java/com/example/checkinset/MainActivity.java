@@ -27,6 +27,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
+
 import com.example.checkinset.model.DataModel;
 import com.example.checkinset.model.ImageModel;
 import com.example.checkinset.model.PointModel;
@@ -108,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
         //BottomSheet initialisieren
         bottomSheet = findViewById(R.id.bottom_sheet);
+        bottomSheet.setBackground(ContextCompat.getDrawable(this, R.drawable.bottom_sheet_background));
 
         tvTimestamp = findViewById(R.id.tvTimestamp);
         tvCoordinateX = findViewById(R.id.tvCoordinateX);
@@ -210,7 +213,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                     loadUIFromDataModel();
                     DataStorage.saveData(MainActivity.this, dataModel);
                     bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
-                    Toast.makeText(MainActivity.this, "Punkt gelöscht.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Point deleted.", Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -218,7 +221,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         addPointButton.setOnClickListener(v -> {
             isAddingPoint = true;
             addPointButton.setEnabled(false);
-            Toast.makeText(MainActivity.this, "Tippe auf ein Bild, um einen Punkt zu setzen.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "Tap on a picture to set a point.", Toast.LENGTH_SHORT).show();
         });
 
         // Datenmodell laden
@@ -239,11 +242,11 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                         try {
                             dataIOManager.exportDataToZip(uri);
                         } catch (IOException e) {
-                            Toast.makeText(this, "Fehler beim Exportieren der Daten: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            Toast.makeText(this, "Error when exporting the data: " + e.getMessage(), Toast.LENGTH_LONG).show();
                             e.printStackTrace();
                         }
                     } else {
-                        Toast.makeText(this, "Export abgebrochen.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Export canceled.", Toast.LENGTH_SHORT).show();
                     }
                 });
         openFileLauncher = registerForActivityResult(
@@ -253,13 +256,16 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                         try {
                             dataIOManager.importDataFromZip(uri);
                         } catch (IOException | JSONException e) {
-                            Toast.makeText(this, "Fehler beim Importieren der Daten: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            Toast.makeText(this, "Error when importing the data: " + e.getMessage(), Toast.LENGTH_LONG).show();
                             e.printStackTrace();
                         }
                     } else {
-                        Toast.makeText(this, "Import abgebrochen.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Import canceled.", Toast.LENGTH_SHORT).show();
                     }
                 });
+
+        //Add image of white owl to toolbar
+        getSupportActionBar().setIcon(R.drawable.ic_action_checkinsetbarowl);
 
     }
 
@@ -281,7 +287,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             return true;
         } else if (id == R.id.action_delete_image) {
             isDeletingImage = true;
-            Toast.makeText(this, "Tippe nun auf das Bild, das du löschen möchtest.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Now tap on the picture you want to delete. (Incl. points)", Toast.LENGTH_SHORT).show();
             return true;
         } else if (id == R.id.action_export_data) {
             dataIOManager.exportData(saveFileLauncher);
@@ -289,142 +295,18 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         } else if (id == R.id.action_import_data) {
             importData();
             return true;
+        } else if (item.getItemId() == R.id.action_aboutCheckInset) {
+                Intent intent_settings_about = new Intent(this, SettingsAboutActivity.class);
+                startActivity(intent_settings_about);
+                return true;
         } else {
             return super.onOptionsItemSelected(item);
         }
     }
 
-
-    // ... (deine bisherigen Methoden)
-//    private void exportData() {
-//        dataModel = DataStorage.loadData(this);
-//        if (dataModel == null || dataModel.images.isEmpty()) {
-//            Toast.makeText(this, "Keine Daten zum Exportieren vorhanden.", Toast.LENGTH_SHORT).show();
-//            return;
-//        }
-//        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
-//        intent.addCategory(Intent.CATEGORY_OPENABLE);
-//        intent.setType("application/zip");
-//        intent.putExtra(Intent.EXTRA_TITLE, "export.zip");
-//        saveFileLauncher.launch("export.zip");
-//    }
-
-//    private void exportDataToZip(Uri zipUri) throws IOException {
-//        try (OutputStream os = getContentResolver().openOutputStream(zipUri);
-//             ZipOutputStream zos = new ZipOutputStream(os)) {
-//
-//            // JSON-Daten erstellen
-//            JSONArray jsonArray = new JSONArray();
-//            for (ImageModel imgModel : dataModel.images) {
-//                JSONObject imgJson = new JSONObject();
-//                imgJson.put("title", imgModel.title);
-//                imgJson.put("imageName", new File(imgModel.path).getName()); // Dateiname des Bildes
-//                JSONArray pointsJson = new JSONArray();
-//                for (PointModel point : imgModel.points) {
-//                    JSONObject pointJson = new JSONObject();
-//                    pointJson.put("xPercent", point.xPercent);
-//                    pointJson.put("yPercent", point.yPercent);
-//                    pointJson.put("timestamp", point.timestamp);
-//                    pointsJson.put(pointJson);
-//                }
-//                imgJson.put("points", pointsJson);
-//                jsonArray.put(imgJson);
-//            }
-//
-//            // JSON-Daten in ZIP schreiben
-//            String jsonData = jsonArray.toString(2);
-//            ZipEntry jsonEntry = new ZipEntry("data.json");
-//            zos.putNextEntry(jsonEntry);
-//            zos.write(jsonData.getBytes());
-//            zos.closeEntry();
-//
-//            // Bilder in ZIP schreiben
-//            for (ImageModel imgModel : dataModel.images) {
-//                Bitmap bitmap = BitmapFactory.decodeFile(imgModel.path);
-//                if (bitmap != null) {
-//                    String imageName = new File(imgModel.path).getName();
-//                    ZipEntry imageEntry = new ZipEntry("images/" + imageName);
-//                    zos.putNextEntry(imageEntry);
-//                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, zos);
-//                    zos.closeEntry();
-//                }
-//            }
-//            Toast.makeText(this, "Daten erfolgreich exportiert.", Toast.LENGTH_SHORT).show();
-//
-//        } catch (JSONException e) {
-//            Toast.makeText(this, "Fehler beim Exportieren der Daten: " + e.getMessage(), Toast.LENGTH_LONG).show();
-//            e.printStackTrace();
-//        }
-//    }
-
     private void importData() {
         openFileLauncher.launch("*/*");
     }
-
-//    private void importDataFromZip(Uri zipUri) throws IOException, JSONException {
-//        dataModel = new DataModel();
-//        try (InputStream is = getContentResolver().openInputStream(zipUri);
-//             ZipInputStream zis = new ZipInputStream(is)) {
-//
-//            ZipEntry entry;
-//            while ((entry = zis.getNextEntry()) != null) {
-//                if (entry.getName().equals("data.json")) {
-//                    // JSON-Daten lesen
-//                    BufferedReader reader = new BufferedReader(new InputStreamReader(zis));
-//                    StringBuilder sb = new StringBuilder();
-//                    String line;
-//                    while ((line = reader.readLine()) != null) {
-//                        sb.append(line);
-//                    }
-//                    JSONArray jsonArray = new JSONArray(sb.toString());
-//                    for (int i = 0; i < jsonArray.length(); i++) {
-//                        JSONObject imgJson = jsonArray.getJSONObject(i);
-//                        ImageModel imgModel = new ImageModel();
-//                        imgModel.title = imgJson.getString("title");
-//                        imgModel.path = getExternalFilesDir(null) + "/temp_" + imgJson.getString("imageName");
-//                        JSONArray pointsJson = imgJson.getJSONArray("points");
-//                        for (int j = 0; j < pointsJson.length(); j++) {
-//                            JSONObject pointJson = pointsJson.getJSONObject(j);
-//                            PointModel pointModel = new PointModel();
-//                            pointModel.xPercent = (float) pointJson.getDouble("xPercent");
-//                            pointModel.yPercent = (float) pointJson.getDouble("yPercent");
-//                            pointModel.timestamp = pointJson.getString("timestamp");
-//                            imgModel.points.add(pointModel);
-//                        }
-//                        dataModel.images.add(imgModel);
-//                    }
-//                } else if (entry.getName().startsWith("images/")) {
-//                    // Bild extrahieren und speichern
-//                    String imageName = entry.getName().substring("images/".length());
-//                    File imageFile = new File(getExternalFilesDir(null), "temp_" + imageName);
-//                    try (FileOutputStream fos = new FileOutputStream(imageFile)) {
-//                        byte[] buffer = new byte[1024];
-//                        int len;
-//                        while ((len = zis.read(buffer)) > 0) {
-//                            fos.write(buffer, 0, len);
-//                        }
-//                    }
-//                    // Bildpfad im DataModel aktualisieren
-//                    for (ImageModel imgModel : dataModel.images) {
-//                        if (imgModel.path.endsWith("temp_" + imageName)) {
-//                            imgModel.path = imageFile.getAbsolutePath();
-//                            break;
-//                        }
-//                    }
-//                }
-//                zis.closeEntry();
-//            }
-//            // DataModel speichern
-//            DataStorage.saveData(this, dataModel);
-//            loadUIFromDataModel();
-//            Toast.makeText(this, "Daten erfolgreich importiert.", Toast.LENGTH_SHORT).show();
-//        } catch (IOException | JSONException e) {
-//            Toast.makeText(this, "Fehler beim Importieren der Daten: " + e.getMessage(), Toast.LENGTH_LONG).show();
-//            e.printStackTrace();
-//        }
-//    }
-
-
 
     private interface CoordinateUpdateListener {
         void onCoordinateUpdated(float newValue);
@@ -444,16 +326,16 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                 float newValue = Float.parseFloat(input.getText().toString());
                 listener.onCoordinateUpdated(newValue);
             } catch (NumberFormatException e) {
-                Toast.makeText(MainActivity.this, "Ungültiger Wert", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Invalid value", Toast.LENGTH_SHORT).show();
             }
         });
-        builder.setNegativeButton("Abbrechen", (dialog, which) -> dialog.cancel());
+        builder.setNegativeButton("Abort", (dialog, which) -> dialog.cancel());
         builder.show();
     }
 
     private void showTitleInputDialog(boolean fromCamera) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Überschrift eingeben");
+        builder.setTitle("Enter heading");
 
         final EditText editText = new EditText(this);
         editText.setInputType(InputType.TYPE_CLASS_TEXT);
@@ -468,7 +350,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                 imageManager.openGallery();
             }
         });
-        builder.setNegativeButton("Abbrechen", (dialog, which) -> dialog.cancel());
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
         builder.show();
     }
 
@@ -489,10 +371,10 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
      */
     private void addImageToUI(ImageModel imageModel) {
         final long[] lastTapTime = {0}; // Array, um eine mutable Variable zu haben
-        Bitmap bitmap = BitmapFactory.decodeFile(imageModel.path);
+        Bitmap bitmap = BitmapFactory.decodeFile(imageModel.cartoonImagePath);
         if (bitmap != null) {
             try {
-                ExifInterface exif = new ExifInterface(imageModel.path);
+                ExifInterface exif = new ExifInterface(imageModel.cartoonImagePath);
                 int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
                 int rotationDegrees = exifToDegrees(orientation);
                 if (rotationDegrees != 0) {
@@ -582,26 +464,28 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     }
 
     @Override
-    public void onImageCaptured(String imagePath, String imageTitle) {
+    public void onImageCaptured(String cartoonImagePath, String originalImagePath, String imageTitle) {
         ImageModel newImg = new ImageModel();
-        newImg.path = imagePath;
+        newImg.originalImagePath = originalImagePath;
+        newImg.cartoonImagePath = cartoonImagePath;
         newImg.title = imageTitle;
         dataModel.images.add(newImg);
         addImageToUI(newImg);
         DataStorage.saveData(this, dataModel);
     }
 
-    @Override
-    public void onImagePicked(String imagePath) {
-        ImageModel newImg = new ImageModel();
-        newImg.path = imagePath;
-        newImg.title = (currentImageTitle != null && !currentImageTitle.isEmpty())
-                ? currentImageTitle
-                : "Galerie-Bild";
-        dataModel.images.add(newImg);
-        addImageToUI(newImg);
-        DataStorage.saveData(this, dataModel);
-    }
+//    @Override
+//    public void onImagePicked(String imagePath) {
+//        ImageModel newImg = new ImageModel();
+//        newImg.originalImagePath = imagePath;
+//        newImg.cartoonImagePath = cartoonPath;
+//        newImg.title = (currentImageTitle != null && !currentImageTitle.isEmpty())
+//                ? currentImageTitle
+//                : "Gallery image";
+//        dataModel.images.add(newImg);
+//        addImageToUI(newImg);
+//        DataStorage.saveData(this, dataModel);
+//    }
 
     @Override
     public void onError(String errorMessage) {
@@ -685,7 +569,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         resetAllPointViews(layout);
 
         if (bottomSheetBehavior == null) {
-            Log.e("BottomSheet", "❌ Fehler: BottomSheetBehavior ist null!");
+            Log.e("BottomSheet", "❌ Error: BottomSheetBehavior ist null!");
             return;
         }
 
@@ -785,7 +669,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         layoutToImageMap.remove(layout);
         DataStorage.saveData(this, dataModel);
         updateAllPointsColors();
-        Toast.makeText(this, "Bild gelöscht.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Image deleted.", Toast.LENGTH_SHORT).show();
     }
 
     private int exifToDegrees(int exifOrientation) {
