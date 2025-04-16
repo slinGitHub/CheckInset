@@ -9,6 +9,7 @@ import android.graphics.Matrix;
 import android.graphics.drawable.GradientDrawable;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.text.InputType;
@@ -19,6 +20,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.*;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -95,6 +98,9 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     private ValueAnimator pulseAnimator;
 
     private DataIOManager dataIOManager;
+
+    private boolean protectedViewOn = true; // default: an
+    private MenuItem toggleItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -267,11 +273,24 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         //Add image of white owl to toolbar
         getSupportActionBar().setIcon(R.drawable.ic_action_checkinsetbarowl);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Window window = getWindow();
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(ContextCompat.getColor(this, R.color.DarkColor1)); // Deine lila Farbe
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            View decor = getWindow().getDecorView();
+            decor.setSystemUiVisibility(0); // weiße Icons
+        }
+
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.top_app_bar, menu);
         return true;
     }
 
@@ -295,6 +314,11 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         } else if (id == R.id.action_import_data) {
             importData();
             return true;
+        } else if (item.getItemId() == R.id.action_toggle_protected_images) {
+                protectedViewOn = !protectedViewOn;
+                item.setIcon(protectedViewOn ? R.drawable.ic_wappen_on : R.drawable.ic_wappen_off);
+                loadUIFromDataModel();
+                return true;
         } else if (item.getItemId() == R.id.action_aboutCheckInset) {
                 Intent intent_settings_about = new Intent(this, SettingsAboutActivity.class);
                 startActivity(intent_settings_about);
@@ -371,10 +395,11 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
      */
     private void addImageToUI(ImageModel imageModel) {
         final long[] lastTapTime = {0}; // Array, um eine mutable Variable zu haben
-        Bitmap bitmap = BitmapFactory.decodeFile(imageModel.cartoonImagePath);
+        String imagePath = protectedViewOn ? imageModel.cartoonImagePath : imageModel.originalImagePath ;
+        Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
         if (bitmap != null) {
             try {
-                ExifInterface exif = new ExifInterface(imageModel.cartoonImagePath);
+                ExifInterface exif = new ExifInterface(imagePath);
                 int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
                 int rotationDegrees = exifToDegrees(orientation);
                 if (rotationDegrees != 0) {

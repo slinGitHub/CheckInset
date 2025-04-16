@@ -1,0 +1,9 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_toggle_protected_images"
+        android:icon="@drawable/ic_wappen_on"
+        android:title="Wappen Umschalten"
+        app:showAsAction="always" />
+</menu>

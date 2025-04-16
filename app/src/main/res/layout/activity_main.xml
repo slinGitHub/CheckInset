@@ -10,6 +10,7 @@
         android:id="@+id/topAppBar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
+        android:elevation="4dp"
         android:background="#602D58"
         android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
         app:title="CheckInset"

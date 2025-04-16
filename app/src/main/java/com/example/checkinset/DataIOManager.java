@@ -1,8 +1,7 @@
 package com.example.checkinset;
 
-import android.content.ContentResolver;
+
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -26,9 +25,9 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import com.example.checkinset.model.DataModel;
-import com.example.checkinset.utils.DataStorage;
 import com.example.checkinset.model.ImageModel;
 import com.example.checkinset.model.PointModel;
+import com.example.checkinset.utils.DataStorage;
 
 public class DataIOManager {
     private Context context;
