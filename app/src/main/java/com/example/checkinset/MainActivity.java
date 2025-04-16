@@ -315,7 +315,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             importData();
             return true;
         } else if (item.getItemId() == R.id.action_toggle_protected_images) {
-                protectedViewOn = !protectedViewOn;
+                protectedViewOn = !protectedViewOn; //Toggle protected view
                 item.setIcon(protectedViewOn ? R.drawable.ic_wappen_on : R.drawable.ic_wappen_off);
                 loadUIFromDataModel();
                 return true;
