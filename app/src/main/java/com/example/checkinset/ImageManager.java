@@ -11,7 +11,9 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -107,6 +109,7 @@ public class ImageManager {
     private void processCapturedImage() {
         // 1. Originalbild laden
         Bitmap originalBitmap = BitmapFactory.decodeFile(currentPhotoPath);
+        originalBitmap = rotateImageIfRequired(currentPhotoPath, originalBitmap);
 
         // 2. Bild zuschneiden – hier rechteckiger Zuschnitt (SquarePadder liefert z.B. ein quadratisches Bild)
         Bitmap croppedBitmap = SquarePadder.cropToSquare(originalBitmap);
@@ -279,6 +282,35 @@ public class ImageManager {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private Bitmap rotateImageIfRequired(String imagePath, Bitmap bitmap) {
+        try {
+            ExifInterface exif = new ExifInterface(imagePath);
+            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+
+            int rotationDegrees = 0;
+            switch (orientation) {
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    rotationDegrees = 90;
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    rotationDegrees = 180;
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    rotationDegrees = 270;
+                    break;
+                default:
+                    return bitmap; // Keine Drehung nötig
+            }
+
+            Matrix matrix = new Matrix();
+            matrix.postRotate(rotationDegrees);
+            return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return bitmap;
         }
     }
 }

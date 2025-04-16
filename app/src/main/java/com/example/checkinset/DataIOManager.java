@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -112,12 +114,18 @@ public class DataIOManager {
 
     public void importDataFromZip(Uri zipUri) throws IOException, JSONException {
         dataModel = new DataModel();
+
         try (InputStream is = context.getContentResolver().openInputStream(zipUri);
              ZipInputStream zis = new ZipInputStream(is)) {
 
             ZipEntry entry;
+            Map<String, File> extractedImages = new HashMap<>();
+            JSONArray jsonArray = null;
+
             while ((entry = zis.getNextEntry()) != null) {
-                if (entry.getName().equals("data.json")) {
+                String entryName = entry.getName();
+
+                if (entryName.endsWith("data.json")) {
                     // JSON-Daten lesen
                     BufferedReader reader = new BufferedReader(new InputStreamReader(zis));
                     StringBuilder sb = new StringBuilder();
@@ -125,30 +133,23 @@ public class DataIOManager {
                     while ((line = reader.readLine()) != null) {
                         sb.append(line);
                     }
-                    JSONArray jsonArray = new JSONArray(sb.toString());
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject imgJson = jsonArray.getJSONObject(i);
-                        ImageModel imgModel = new ImageModel();
-                        imgModel.title = imgJson.getString("title");
-                        String originalName = imgJson.getString("originalImageName");
-                        String cartoonName = imgJson.getString("cartoonImageName");
-                        imgModel.originalImagePath = context.getExternalFilesDir(null) + "/temp_" + originalName;
-                        imgModel.cartoonImagePath = context.getExternalFilesDir(null) + "/temp_" + cartoonName;
-                        JSONArray pointsJson = imgJson.getJSONArray("points");
-                        for (int j = 0; j < pointsJson.length(); j++) {
-                            JSONObject pointJson = pointsJson.getJSONObject(j);
-                            PointModel pointModel = new PointModel();
-                            pointModel.xPercent = (float) pointJson.getDouble("xPercent");
-                            pointModel.yPercent = (float) pointJson.getDouble("yPercent");
-                            pointModel.timestamp = pointJson.getString("timestamp");
-                            imgModel.points.add(pointModel);
-                        }
-                        dataModel.images.add(imgModel);
+                    jsonArray = new JSONArray(sb.toString());
+
+                } else if (entryName.startsWith("images/")) {
+                    String imageName = entryName.substring("images/".length());
+
+                    // Schutz: Kein leerer Dateiname
+                    if (imageName == null || imageName.trim().isEmpty()) {
+                        continue;
                     }
-                } else if (entry.getName().startsWith("images/")) {
-                    // Bild extrahieren und speichern
-                    String imageName = entry.getName().substring("images/".length());
-                    File imageFile = new File(context.getExternalFilesDir(null), "temp_" + imageName);
+
+                    File imageFile = new File(context.getExternalFilesDir(null), imageName);
+
+                    // Schutz: Pfad darf kein Verzeichnis sein
+                    if (imageFile.isDirectory()) {
+                        continue;
+                    }
+
                     try (FileOutputStream fos = new FileOutputStream(imageFile)) {
                         byte[] buffer = new byte[1024];
                         int len;
@@ -156,27 +157,59 @@ public class DataIOManager {
                             fos.write(buffer, 0, len);
                         }
                     }
-                    // Bildpfad im DataModel aktualisieren
-                    for (ImageModel imgModel : dataModel.images) {
-                        if (imgModel.originalImagePath.endsWith("temp_" + imageName)) {
-                            imgModel.originalImagePath = imageFile.getAbsolutePath();
-                            break;
-                        } else if (imgModel.cartoonImagePath.endsWith("temp_" + imageName)) {
-                            imgModel.cartoonImagePath = imageFile.getAbsolutePath();
-                            break;
-                        }
-                    }
+
+                    extractedImages.put(imageName, imageFile);
                 }
+
                 zis.closeEntry();
             }
-            // DataModel speichern
+
+            if (jsonArray == null) {
+                throw new JSONException("data.json nicht gefunden!");
+            }
+
+            // JSON verarbeiten
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject imgJson = jsonArray.getJSONObject(i);
+                ImageModel imgModel = new ImageModel();
+
+                imgModel.title = imgJson.getString("title");
+
+                String originalName = imgJson.getString("imageName");
+                String cartoonName = imgJson.getString("cartoonImageName");
+
+                File originalFile = extractedImages.get(originalName);
+                File cartoonFile = extractedImages.get(cartoonName);
+
+                imgModel.originalImagePath = (originalFile != null) ? originalFile.getAbsolutePath() :
+                        new File(context.getExternalFilesDir(null), originalName).getAbsolutePath();
+                imgModel.cartoonImagePath = (cartoonFile != null) ? cartoonFile.getAbsolutePath() :
+                        new File(context.getExternalFilesDir(null), cartoonName).getAbsolutePath();
+
+                JSONArray pointsJson = imgJson.getJSONArray("points");
+                for (int j = 0; j < pointsJson.length(); j++) {
+                    JSONObject pointJson = pointsJson.getJSONObject(j);
+                    PointModel pointModel = new PointModel();
+                    pointModel.xPercent = (float) pointJson.getDouble("xPercent");
+                    pointModel.yPercent = (float) pointJson.getDouble("yPercent");
+                    pointModel.timestamp = pointJson.getString("timestamp");
+                    imgModel.points.add(pointModel);
+                }
+
+                dataModel.images.add(imgModel);
+            }
+
             dataStorage.saveData(context, dataModel);
-            // UI neu laden
             mainActivity.loadUIFromDataModel();
+
+            mainActivity.updateDataModel(dataModel);
+
             Toast.makeText(context, "Daten erfolgreich importiert.", Toast.LENGTH_SHORT).show();
+
         } catch (IOException | JSONException e) {
-            Toast.makeText(context, "Fehler beim Importieren der Daten: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(context, "Fehler beim Importieren: " + e.getMessage(), Toast.LENGTH_LONG).show();
             e.printStackTrace();
         }
     }
+
 }

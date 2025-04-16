@@ -5,6 +5,7 @@ import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.drawable.GradientDrawable;
 import android.media.ExifInterface;
@@ -285,6 +286,10 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             decor.setSystemUiVisibility(0); // weiße Icons
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setNavigationBarColor(Color.BLACK);
+        }
+
     }
 
     @Override
@@ -388,6 +393,11 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         for (ImageModel img : dataModel.images) {
             addImageToUI(img);
         }
+    }
+
+    public void updateDataModel(DataModel newModel) {
+        this.dataModel = newModel;
+        loadUIFromDataModel();
     }
 
     /**
