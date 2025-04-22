@@ -30,18 +30,21 @@
         android:background="@color/black">
 
         <!-- ScrollView, in dem die dynamisch erzeugten Bildbereiche platziert werden -->
-        <ScrollView
+        <androidx.core.widget.NestedScrollView
             android:id="@+id/imageScroll"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            android:clipToPadding="false"
+            android:clipChildren="false">
 
             <LinearLayout
                 android:id="@+id/imageContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
-        </ScrollView>
+        </androidx.core.widget.NestedScrollView>
     </LinearLayout>
 
     <!-- Floating Action Button für "Punkte setzen" -->

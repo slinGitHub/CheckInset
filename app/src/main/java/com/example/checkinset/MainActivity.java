@@ -34,6 +34,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.NestedScrollView;
 
 import com.example.checkinset.model.DataModel;
 import com.example.checkinset.model.ImageModel;
@@ -52,6 +53,7 @@ import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -131,6 +133,35 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         bottomSheet.post(() -> bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN));
         bottomSheetBehavior.setPeekHeight(bottomSheet.getHeight());
 
+        NestedScrollView scroll = findViewById(R.id.imageScroll);
+        final int origLeft   = scroll.getPaddingLeft();
+        final int origTop    = scroll.getPaddingTop();
+        final int origRight  = scroll.getPaddingRight();
+
+        bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+                // hier nichts weiter nötig
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+                // slideOffset: 0 = eingeklappt, 1 = voll aufgeklappt
+                int peek        = bottomSheetBehavior.getPeekHeight();
+                int fullHeight  = bottomSheet.getHeight();
+                // wie weit ragt das Sheet gerade ins ScrollView‑Fenster?
+                int insetBottom = Math.round(slideOffset * (fullHeight - peek));
+
+                // nur den unteren Padding‑Wert ändern
+                scroll.setPadding(
+                        origLeft,
+                        origTop,
+                        origRight,
+                        insetBottom
+                );
+            }
+        });
+
         //BottomSheet Date/Clock
         tvTimestamp.setOnClickListener(v -> {
             // Versuche das vorhandene Datum/Uhrzeit zu parsen, ansonsten aktuelles Datum/Uhrzeit verwenden
@@ -160,12 +191,13 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                                     calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
                                     calendar.set(Calendar.MINUTE, minute);
                                     // Neues Datum und Uhrzeit kombinieren und formatieren
-                                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+                                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
                                     String newDateTime = sdf.format(calendar.getTime());
                                     tvTimestamp.setText(newDateTime);
                                     // Aktualisiere das Datum im aktuellen PointModel
                                     if (currentPoint != null) {
                                         currentPoint.timestamp = newDateTime;
+                                        refreshAllPoints();
                                         DataStorage.saveData(MainActivity.this, dataModel);
                                     }
                                 },
@@ -180,6 +212,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                     calendar.get(Calendar.DAY_OF_MONTH)
             );
             datePickerDialog.show();
+
         });
 
         // Für X-Koordinate
@@ -488,7 +521,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                 for (PointModel p : imageModel.points) {
                     addPointView(customLayout, p.xPercent, p.yPercent, p.color, p);
                 }
-                updateAllPointsColors();
+                refreshAllPoints();
             }
         });
 
@@ -557,62 +590,45 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
         imgModel.points.add(p);
         addPointView(layout, xPercent, yPercent, p.color, p);
-        updateAllPointsColors();
+        refreshAllPoints();
         DataStorage.saveData(this, dataModel);
     }
 
     private void addPointView(CustomImageLayout layout, float xPercent, float yPercent, int color, PointModel point) {
         int size = (int) (16 * getResources().getDisplayMetrics().density);
-        View pointView = new View(this);
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(size, size);
         int actualX = (int) (layout.getWidth() * xPercent) - size / 2;
         int actualY = (int) (layout.getHeight() * yPercent) - size / 2;
-        lp.leftMargin = actualX;
-        lp.topMargin = actualY;
-        pointView.setBackgroundColor(color);
-        pointView.setTag(point); // Speichert das PointModel als Tag!
-        setCircleBackground(pointView, color);
-        layout.addView(pointView, lp);
 
-        // 2) Tage-Differenz berechnen
-        long daysDiff = getDaysDifference(point.timestamp);
+        // 1) Container anlegen und mit unserem PointModel taggen
+        FrameLayout wrapper = new FrameLayout(this);
+        wrapper.setTag(point);
+        FrameLayout.LayoutParams wrapperLp = new FrameLayout.LayoutParams(size, size);
+        wrapperLp.leftMargin = actualX;
+        wrapperLp.topMargin  = actualY;
+        layout.addView(wrapper, wrapperLp);
 
-        // 3) Label mit der Zahl
-//        TextView label = new TextView(this);
-//        label.setText(String.valueOf(daysDiff));
-//        label.setTextSize(12);
-//        label.setTypeface(Typeface.DEFAULT_BOLD);
-//        label.setTextColor(Color.WHITE);
-//        label.setBackgroundColor(Color.parseColor("#80000000")); // halbtransparent schwarz
-//        label.setPadding(6, 2, 6, 2);
-//        label.setTag("pointLabel");
-//
-//        FrameLayout.LayoutParams labelLp =
-//                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-//                        ViewGroup.LayoutParams.WRAP_CONTENT);
+        // 2) Kreis‑View
+        View circle = new View(this);
+        circle.setId(R.id.point_circle);
+        setCircleBackground(circle, color);
+        wrapper.addView(circle, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
 
+        // 3) Label‑View
         TextView overlay = new TextView(this);
-        overlay.setText(String.valueOf(daysDiff));
-        overlay.setTextSize(10);
+        overlay.setId(R.id.point_label);
+        overlay.setGravity(Gravity.CENTER);
         overlay.setTypeface(Typeface.DEFAULT_BOLD);
-        overlay.setTextColor(Color.BLACK);
-        overlay.setBackgroundColor(Color.TRANSPARENT); // transparent
-        overlay.setGravity(Gravity.CENTER);            // Text mittig
-        overlay.setTag("pointLabel");                  // damit wir ihn nicht einfärben
-
-
-        // Label rechts oberhalb des Punkts
-        //labelLp.leftMargin = actualX + size;
-        //labelLp.topMargin  = actualY - size/2;
-        //layout.addView(label, labelLp);
-
-        // exakt gleiche Größe und Position wie der Kreis
-        FrameLayout.LayoutParams labelLp = new FrameLayout.LayoutParams(size, size);
-        labelLp.leftMargin = actualX;
-        labelLp.topMargin  = actualY;
-        layout.addView(overlay, labelLp);
-
+        overlay.setTextSize(10);
+        overlay.setText(String.valueOf(getDaysDifference(point.timestamp)));
+        wrapper.addView(overlay, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+        ));
     }
+
 
     private long getDaysDifference(String timestamp) {
         try {
@@ -708,33 +724,35 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     }
 
 
-    private void updateAllPointsColors() {
-        List<PointModel> allPoints = new ArrayList<>();
-        for (ImageModel im : dataModel.images) {
-            allPoints.addAll(im.points);
-        }
-        Collections.sort(allPoints, (p1, p2) -> p1.timestamp.compareTo(p2.timestamp));
-        int total = allPoints.size();
-        int startIndex = Math.max(0, total - 10);
-        for (int i = 0; i < startIndex; i++) {
-            allPoints.get(i).color = 0xFF352A87;
-        }
-        int lastCount = Math.min(10, total);
-        int offset = 10 - lastCount;
-        for (int i = 0; i < lastCount; i++) {
-            int colorIndex = offset + i;
-            allPoints.get(startIndex + i).color = PARULA_COLORS[colorIndex];
-        }
-        for (Map.Entry<CustomImageLayout, ImageModel> entry : layoutToImageMap.entrySet()) {
-            applyPointColorsToLayout(entry.getValue(), entry.getKey());
-        }
-    }
+    private void refreshAllPoints() {
+        // Farben neu berechnen wie gehabt
+        List<PointModel> all = dataModel.images.stream()
+                .flatMap(im -> im.points.stream())
+                .sorted(Comparator.comparing(p -> p.timestamp))
+                .collect(Collectors.toList());
 
-    private void applyPointColorsToLayout(ImageModel imageModel, CustomImageLayout layout) {
-        for (PointModel p : imageModel.points) {
-            View pointView = layout.findViewWithTag(p);
-            if (pointView != null) {
-                setCircleBackground(pointView, p.color);
+        int total = all.size();
+        int cutoff = Math.max(0, total - 10);
+        for (int i = 0; i < cutoff; i++)  all.get(i).color = 0xFF352A87;
+        for (int i = cutoff; i < total; i++) {
+            all.get(i).color = PARULA_COLORS[10 - (total - i)];
+        }
+
+        // Über alle Layouts gehen
+        for (Map.Entry<CustomImageLayout, ImageModel> e : layoutToImageMap.entrySet()) {
+            CustomImageLayout layout = e.getKey();
+            for (PointModel p : e.getValue().points) {
+                // Container finden
+                View wrapper = (View) layout.findViewWithTag(p);
+                if (wrapper == null) continue;
+
+                // Kreis updaten
+                View circle = wrapper.findViewById(R.id.point_circle);
+                setCircleBackground(circle, p.color);
+
+                // Label updaten
+                TextView label = wrapper.findViewById(R.id.point_label);
+                label.setText(String.valueOf(getDaysDifference(p.timestamp)));
             }
         }
     }
@@ -756,7 +774,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         }
         layoutToImageMap.remove(layout);
         DataStorage.saveData(this, dataModel);
-        updateAllPointsColors();
+        refreshAllPoints();
         Toast.makeText(this, "Image deleted.", Toast.LENGTH_SHORT).show();
     }
 
