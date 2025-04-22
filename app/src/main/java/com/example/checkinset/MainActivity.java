@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.media.ExifInterface;
 import android.net.Uri;
@@ -15,6 +16,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.text.InputType;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -47,6 +49,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.ZipEntry;
@@ -568,7 +571,59 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         lp.topMargin = actualY;
         pointView.setBackgroundColor(color);
         pointView.setTag(point); // Speichert das PointModel als Tag!
+        setCircleBackground(pointView, color);
         layout.addView(pointView, lp);
+
+        // 2) Tage-Differenz berechnen
+        long daysDiff = getDaysDifference(point.timestamp);
+
+        // 3) Label mit der Zahl
+//        TextView label = new TextView(this);
+//        label.setText(String.valueOf(daysDiff));
+//        label.setTextSize(12);
+//        label.setTypeface(Typeface.DEFAULT_BOLD);
+//        label.setTextColor(Color.WHITE);
+//        label.setBackgroundColor(Color.parseColor("#80000000")); // halbtransparent schwarz
+//        label.setPadding(6, 2, 6, 2);
+//        label.setTag("pointLabel");
+//
+//        FrameLayout.LayoutParams labelLp =
+//                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+//                        ViewGroup.LayoutParams.WRAP_CONTENT);
+
+        TextView overlay = new TextView(this);
+        overlay.setText(String.valueOf(daysDiff));
+        overlay.setTextSize(10);
+        overlay.setTypeface(Typeface.DEFAULT_BOLD);
+        overlay.setTextColor(Color.BLACK);
+        overlay.setBackgroundColor(Color.TRANSPARENT); // transparent
+        overlay.setGravity(Gravity.CENTER);            // Text mittig
+        overlay.setTag("pointLabel");                  // damit wir ihn nicht einfärben
+
+
+        // Label rechts oberhalb des Punkts
+        //labelLp.leftMargin = actualX + size;
+        //labelLp.topMargin  = actualY - size/2;
+        //layout.addView(label, labelLp);
+
+        // exakt gleiche Größe und Position wie der Kreis
+        FrameLayout.LayoutParams labelLp = new FrameLayout.LayoutParams(size, size);
+        labelLp.leftMargin = actualX;
+        labelLp.topMargin  = actualY;
+        layout.addView(overlay, labelLp);
+
+    }
+
+    private long getDaysDifference(String timestamp) {
+        try {
+            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+            Date pointDate = df.parse(timestamp);
+            long diffMillis = new Date().getTime() - pointDate.getTime();
+            return diffMillis / (1000L * 60 * 60 * 24); // Ganzzahlige Tage
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 
     /**
@@ -676,13 +731,11 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     }
 
     private void applyPointColorsToLayout(ImageModel imageModel, CustomImageLayout layout) {
-        int childCount = layout.getChildCount();
-        int pointIndex = 1;
         for (PointModel p : imageModel.points) {
-            if (pointIndex >= childCount) break;
-            View pointView = layout.getChildAt(pointIndex);
-            setCircleBackground(pointView, p.color);
-            pointIndex++;
+            View pointView = layout.findViewWithTag(p);
+            if (pointView != null) {
+                setCircleBackground(pointView, p.color);
+            }
         }
     }
 

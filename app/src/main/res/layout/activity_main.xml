@@ -23,12 +23,15 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="5dp"
+        android:paddingHorizontal="5dp"
+        android:paddingTop="0dp"
+        android:paddingBottom="0dp"
         android:layout_marginTop="?attr/actionBarSize"
         android:background="@color/black">
 
         <!-- ScrollView, in dem die dynamisch erzeugten Bildbereiche platziert werden -->
         <ScrollView
+            android:id="@+id/imageScroll"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
@@ -64,7 +67,8 @@
         android:background="@android:color/white"
         android:padding="16dp"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
-        app:behavior_hideable="true"
+        app:behavior_peekHeight="120dp"
+        app:behavior_hideable="false"
         android:visibility="visible">
 
         <LinearLayout

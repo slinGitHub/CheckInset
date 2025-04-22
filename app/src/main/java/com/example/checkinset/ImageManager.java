@@ -119,7 +119,7 @@ public class ImageManager {
         String originalImagePath = saveBitmap(croppedBitmap, "CROPPED_" + timeStamp + ".jpg");
 
         // Das zugeschnittene Bild in Graustufen umwandeln
-        Bitmap grayscaleBitmap = toGrayscale(croppedBitmap, 50);
+        Bitmap grayscaleBitmap = toGrayscale(croppedBitmap, 30);
 
         // 3. Bild auf Modell-Eingabegröße skalieren (hier: 512x512, passe ggf. an dein Modell an)
         int modelWidth = 512;
