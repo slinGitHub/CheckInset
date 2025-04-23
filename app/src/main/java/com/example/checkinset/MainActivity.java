@@ -133,34 +133,6 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         bottomSheet.post(() -> bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN));
         bottomSheetBehavior.setPeekHeight(bottomSheet.getHeight());
 
-        NestedScrollView scroll = findViewById(R.id.imageScroll);
-        final int origLeft   = scroll.getPaddingLeft();
-        final int origTop    = scroll.getPaddingTop();
-        final int origRight  = scroll.getPaddingRight();
-
-        bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
-            @Override
-            public void onStateChanged(@NonNull View bottomSheet, int newState) {
-                // hier nichts weiter nötig
-            }
-
-            @Override
-            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
-                // slideOffset: 0 = eingeklappt, 1 = voll aufgeklappt
-                int peek        = bottomSheetBehavior.getPeekHeight();
-                int fullHeight  = bottomSheet.getHeight();
-                // wie weit ragt das Sheet gerade ins ScrollView‑Fenster?
-                int insetBottom = Math.round(slideOffset * (fullHeight - peek));
-
-                // nur den unteren Padding‑Wert ändern
-                scroll.setPadding(
-                        origLeft,
-                        origTop,
-                        origRight,
-                        insetBottom
-                );
-            }
-        });
 
         //BottomSheet Date/Clock
         tvTimestamp.setOnClickListener(v -> {
@@ -461,7 +433,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         TextView titleView = new TextView(this);
         titleView.setText(imageModel.title);
         titleView.setTextSize(18);
-        titleView.setTextColor(0xFFFFFFFF); // Weißer Text
+        titleView.setTextColor(0x000000); // Weißer Text
 
         CustomImageLayout customLayout = new CustomImageLayout(this);
         customLayout.setImageBitmap(bitmap);
@@ -565,14 +537,11 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
     @Override
     public void onBackPressed() {
-        if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED) {
-            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
-
-            // Falls ein Punkt animiert wird, stoppe die Animation
-            if (currentPoint != null && currentLayout != null) {
-                View pointView = getPointView(currentLayout, currentPoint);
-                if (pointView != null) stopPulseAnimation(pointView);
-            }
+        int state = bottomSheetBehavior.getState();
+        if (state == BottomSheetBehavior.STATE_EXPANDED
+                || state == BottomSheetBehavior.STATE_HALF_EXPANDED)  {
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            resetAllPointViews(currentLayout);
             return; // Verhindert, dass die App geschlossen wird
         }
         super.onBackPressed();
@@ -693,20 +662,29 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         currentPoint = point;
         currentLayout = layout;
 
-        // Starte die Animation für den neuen Punkt
+        // Punkt-View finden und Kreis weiß einfärben:
         View pointView = getPointView(layout, point);
-        if (pointView != null) startPulseAnimation(pointView);
+        if (pointView != null) {
+            View circle = pointView.findViewById(R.id.point_circle);
+            // import android.graphics.Color;
+            setCircleBackground(circle, Color.WHITE);
+        }
     }
 
     private void resetAllPointViews(CustomImageLayout layout) {
         for (int i = 0; i < layout.getChildCount(); i++) {
             View child = layout.getChildAt(i);
-            // Überprüfen, ob das Tag ein PointModel ist
-            if (child.getTag() instanceof PointModel) {
-                child.animate().cancel(); // Stoppt laufende Animationen
-                child.setScaleX(1f);
-                child.setScaleY(1f);
-            }
+            if (!(child.getTag() instanceof PointModel)) continue;
+
+            // Skalierung zurücksetzen (falls du doch skaliert hattest)
+            child.animate().cancel();
+            child.setScaleX(1f);
+            child.setScaleY(1f);
+
+            // Kreis wieder in der Original-Farbe zeichnen
+            View circle = child.findViewById(R.id.point_circle);
+            PointModel pm = (PointModel) child.getTag();
+            setCircleBackground(circle, pm.color);
         }
     }
 
@@ -783,36 +761,6 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_180) return 180;
         else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_270) return 270;
         return 0;
-    }
-
-    private void startPulseAnimation(View pointView) {
-        if (pulseAnimator != null && pulseAnimator.isRunning()) {
-            pulseAnimator.cancel();
-        }
-
-        pulseAnimator = ValueAnimator.ofFloat(1f, 1.5f, 1f);
-        pulseAnimator.setDuration(1000);
-        pulseAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        pulseAnimator.setRepeatMode(ValueAnimator.REVERSE);
-        pulseAnimator.addUpdateListener(animation -> {
-            float scale = (float) animation.getAnimatedValue();
-            pointView.setScaleX(scale);
-            pointView.setScaleY(scale);
-        });
-
-        pulseAnimator.start();
-    }
-
-    private void stopPulseAnimation(View pointView) {
-        if (pulseAnimator != null) {
-            pulseAnimator.cancel();
-            pulseAnimator = null;
-        }
-        // Entfernt alle an das View gebundenen Animationen
-        pointView.animate().cancel();
-        // Setzt die Skalierung explizit zurück
-        pointView.setScaleX(1f);
-        pointView.setScaleY(1f);
     }
 
 

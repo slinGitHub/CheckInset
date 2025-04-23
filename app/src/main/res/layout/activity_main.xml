@@ -25,7 +25,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:paddingHorizontal="5dp"
+        android:paddingHorizontal="0dp"
         android:paddingTop="0dp"
         android:paddingBottom="0dp"
         android:layout_marginTop="?attr/actionBarSize"
@@ -39,7 +39,8 @@
             android:layout_weight="1"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
             android:clipToPadding="false"
-            android:clipChildren="false">
+            android:clipChildren="false"
+            android:paddingBottom="200dp"> <!-- Höhe des Bottom Sheets, nicht berechnet!! -->
 
             <LinearLayout
                 android:id="@+id/imageContainer"
@@ -75,6 +76,13 @@
         app:behavior_peekHeight="120dp"
         app:behavior_hideable="false"
         android:visibility="visible">
+
+        <View
+            android:layout_width="36dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_bottom_sheet_handle"/>
 
         <LinearLayout
             android:layout_width="wrap_content"
