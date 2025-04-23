@@ -108,6 +108,8 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     private boolean protectedViewOn = true; // default: an
     private MenuItem toggleItem;
 
+    private WavePulseAnimator waveAnimator;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -433,7 +435,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         TextView titleView = new TextView(this);
         titleView.setText(imageModel.title);
         titleView.setTextSize(18);
-        titleView.setTextColor(0x000000); // Weißer Text
+        titleView.setTextColor(Color.WHITE); // Weißer Text
 
         CustomImageLayout customLayout = new CustomImageLayout(this);
         customLayout.setImageBitmap(bitmap);
@@ -639,6 +641,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
      * Zeigt die Details des ausgewählten Punktes im Bottom Sheet an.
      */
     private void showPointDetails(PointModel point, CustomImageLayout layout) {
+        int originalPointColor = point.color;
 
         // Zuerst alle Punkte im Layout auf den Standardradius zurücksetzen
         resetAllPointViews(layout);
@@ -669,6 +672,24 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             // import android.graphics.Color;
             setCircleBackground(circle, Color.WHITE);
         }
+
+        if (waveAnimator != null) {
+            waveAnimator.stop();
+        }
+
+        int sizePx = (int) (25 * getResources().getDisplayMetrics().density);
+        int actualX = (int) (layout.getWidth() * point.xPercent) - sizePx / 2;
+        int actualY = (int) (layout.getHeight() * point.yPercent) - sizePx / 2;
+
+        // Wellen-Animator initialisieren und starten
+        waveAnimator = new WavePulseAnimator(
+                (ViewGroup) layout, // oder das passende Container-View
+                actualX,
+                actualY,
+                sizePx,
+                Color.WHITE
+        );
+        waveAnimator.start();
     }
 
     private void resetAllPointViews(CustomImageLayout layout) {
