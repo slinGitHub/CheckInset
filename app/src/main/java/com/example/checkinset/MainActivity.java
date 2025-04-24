@@ -543,7 +543,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         if (state == BottomSheetBehavior.STATE_EXPANDED
                 || state == BottomSheetBehavior.STATE_HALF_EXPANDED)  {
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-            resetAllPointViews(currentLayout);
+            refreshAllPoints();
             return; // Verhindert, dass die App geschlossen wird
         }
         super.onBackPressed();
@@ -643,8 +643,8 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     private void showPointDetails(PointModel point, CustomImageLayout layout) {
         int originalPointColor = point.color;
 
-        // Zuerst alle Punkte im Layout auf den Standardradius zurücksetzen
-        resetAllPointViews(layout);
+        // Zuerst alle Punkte auf den Standardradius zurücksetzen
+        refreshAllPoints();
 
         if (bottomSheetBehavior == null) {
             Log.e("BottomSheet", "❌ Error: BottomSheetBehavior ist null!");
@@ -687,7 +687,9 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                 actualX,
                 actualY,
                 sizePx,
-                Color.WHITE
+                Color.WHITE,
+                0.5f,
+                3f
         );
         waveAnimator.start();
     }
@@ -724,6 +726,13 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
 
     private void refreshAllPoints() {
+        String testLabel = "";
+
+        //Wave stoppen
+        if (waveAnimator != null) {
+            waveAnimator.stop();
+        }
+
         // Farben neu berechnen wie gehabt
         List<PointModel> all = dataModel.images.stream()
                 .flatMap(im -> im.points.stream())
@@ -750,8 +759,11 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                 setCircleBackground(circle, p.color);
 
                 // Label updaten
+
                 TextView label = wrapper.findViewById(R.id.point_label);
                 label.setText(String.valueOf(getDaysDifference(p.timestamp)));
+                testLabel = String.valueOf(getDaysDifference(p.timestamp));
+                Log.d("RefreshPoints", "Updating point with timestamp: " + p.timestamp + " String: " + testLabel);
             }
         }
     }

@@ -14,6 +14,7 @@ import androidx.annotation.ColorInt;
 /**
  * WavePulseAnimator erzeugt eine sich wiederholende Wellenanimation an einer spezifischen Koordinate.
  * Die Wellenfarbe entspricht der ursprünglichen Farbe des Punkts.
+ * Durch Überladen kann der maximale Ausbreitungsfaktor (maxScale) angepasst werden.
  */
 public class WavePulseAnimator {
     private final ViewGroup container;
@@ -23,42 +24,60 @@ public class WavePulseAnimator {
     private final @ColorInt int pulseColor;
     private final long waveInterval;
     private final long waveDuration;
+    private final float startScale;
     private final float maxScale;
     private final Handler handler;
     private final Runnable waveRunnable;
     private boolean running;
 
     /**
-     * Konstruktor: definiert Position, Größe und Farbe der Welle
-     * @param container Eltern-Container, in dem die Wellen-Views erzeugt werden
-     * @param startX x-Koordinate in px, an der die Welle startet
-     * @param startY y-Koordinate in px, an der die Welle startet
-     * @param size Größe der Welle in px (Durchmesser)
-     * @param pulseColor Farbe der Wellenlinie
+     * Privater Konstruktor für volle Konfiguration.
      */
-    public WavePulseAnimator(ViewGroup container,
-                             int startX,
-                             int startY,
-                             int size,
-                             @ColorInt int pulseColor) {
+    private WavePulseAnimator(ViewGroup container,
+                              int startX,
+                              int startY,
+                              int size,
+                              @ColorInt int pulseColor,
+                              long waveInterval,
+                              long waveDuration,
+                              float startScale,
+                              float maxScale) {
         this.container = container;
         this.startX = startX;
         this.startY = startY;
         this.size = size;
         this.pulseColor = pulseColor;
-        this.waveInterval = 3000;
-        this.waveDuration = 5000;
-        this.maxScale = 3f;
+        this.waveInterval = waveInterval;
+        this.waveDuration = waveDuration;
+        this.startScale = startScale;
+        this.maxScale = maxScale;
         this.handler = new Handler();
         this.running = false;
 
-        this.waveRunnable = new Runnable() {
+        // Lokale Referenz, damit waveRunnable in sich selbst referenzieren kann
+        Runnable r = new Runnable() {
             @Override
             public void run() {
                 createWave();
-                if (running) handler.postDelayed(this, waveInterval);
+                if (running) {
+                    handler.postDelayed(this, WavePulseAnimator.this.waveInterval);
+                }
             }
         };
+        this.waveRunnable = r;
+    }
+
+    /**
+     * Standard-Konstruktor: maxScale = 2f, Intervall = 400ms, Dauer = 1000ms
+     */
+     public WavePulseAnimator(ViewGroup container,
+                             int startX,
+                             int startY,
+                             int size,
+                             @ColorInt int pulseColor,
+                             float startScale,
+                             float maxScale) {
+        this(container, startX, startY, size, pulseColor, 2000, 3000, startScale, maxScale);
     }
 
     /**
@@ -102,14 +121,14 @@ public class WavePulseAnimator {
         gd.setStroke(dpToPx(ctx, 2), pulseColor);
         wave.setBackground(gd);
 
-        wave.setScaleX(0f);
-        wave.setScaleY(0f);
+        wave.setScaleX(startScale);
+        wave.setScaleY(startScale);
         wave.setAlpha(1f);
         container.addView(wave);
 
         // Animationssteuerung
-        ObjectAnimator sx = ObjectAnimator.ofFloat(wave, "scaleX", 0f, maxScale);
-        ObjectAnimator sy = ObjectAnimator.ofFloat(wave, "scaleY", 0f, maxScale);
+        ObjectAnimator sx = ObjectAnimator.ofFloat(wave, "scaleX", startScale, maxScale);
+        ObjectAnimator sy = ObjectAnimator.ofFloat(wave, "scaleY", startScale, maxScale);
         ObjectAnimator al = ObjectAnimator.ofFloat(wave, "alpha", 0.5f, 0f);
         sx.setDuration(waveDuration);
         sy.setDuration(waveDuration);
@@ -129,4 +148,3 @@ public class WavePulseAnimator {
         return Math.round(dp * ctx.getResources().getDisplayMetrics().density);
     }
 }
-
