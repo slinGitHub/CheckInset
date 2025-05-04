@@ -2,13 +2,16 @@ package com.example.checkinset;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Matrix;
@@ -20,10 +23,17 @@ import android.provider.MediaStore;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.math.MathUtils;
+
 import android.widget.Toast;
 
+import org.tensorflow.lite.Interpreter;
+
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -31,6 +41,8 @@ import java.util.Locale;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.FileOutputStream;
+
+import org.tensorflow.lite.gpu.GpuDelegate;
 
 public class ImageManager {
 
@@ -43,6 +55,9 @@ public class ImageManager {
     private String currentPhotoPath;
     private String currentImageTitle;
 
+    private final Context context;
+    private Interpreter esrganInterpreter;
+
     public interface ImageResultCallback {
         void onImageCaptured(String imagePath, String originalImagePath, String imageTitle);
 
@@ -50,9 +65,15 @@ public class ImageManager {
         void onError(String errorMessage);
     }
 
-    public ImageManager(Activity activity, ImageResultCallback callback) {
+    public ImageManager(Activity activity, ImageResultCallback callback, Context context) {
         this.activity = activity;
         this.callback = callback;
+        this.context = context.getApplicationContext();
+        try {
+            initEsrgan();
+        } catch (IOException e) {
+            //Log.e("ImageManager", "Failed to load ESRGAN model", e);
+        }
     }
 
     public void setCurrentImageTitle(String title) {
@@ -134,6 +155,16 @@ public class ImageManager {
         Bitmap finalCartoon = result.outputBitmap;
         // Optional: Anzeige des cartoonisierten Bildes in einer ImageView
         // cartoonImageView.setImageBitmap(finalCartoon);
+
+//        //Extra Upscaling mit ESRGAN
+//        // 5a. ESRGAN ×4 Upscaling
+//        float[][][][] inBuffer  = makeInputBuffer(finalCartoon);
+//        float[][][][] outBuffer = new float[1][finalCartoon.getHeight()*4][finalCartoon.getWidth()*4][3];
+//
+//        // Interpreter ausführen (muss auf Main-Thread oder in Hintergrund-Thread geschehen)
+//        esrganInterpreter.run(inBuffer, outBuffer);
+//
+//        Bitmap upscaledCartoon = makeBitmapFromOutput(outBuffer);
 
         Bitmap warmCartoon = adjustWarmth(finalCartoon, 50);
 
@@ -241,18 +272,6 @@ public class ImageManager {
         }
     }
 
-    public String getRealPathFromURI(Uri uri) {
-        String[] projection = {MediaStore.Images.Media.DATA};
-        Cursor cursor = activity.getContentResolver().query(uri, projection, null, null, null);
-        if (cursor != null) {
-            int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            cursor.moveToFirst();
-            String filePath = cursor.getString(columnIndex);
-            cursor.close();
-            return filePath;
-        }
-        return null;
-    }
 
     /**
      * Kopiert ein Bild von der Galerie in den app‑internen Pictures-Ordner.
@@ -312,6 +331,58 @@ public class ImageManager {
             e.printStackTrace();
             return bitmap;
         }
+    }
+
+    /** Lädt den TFLite-Interpreter aus assets/esrgan_fp16.tflite */
+    private void initEsrgan() throws IOException {
+        // Asset in einen MappedByteBuffer laden (effizient für große Modelle)
+        MappedByteBuffer modelBuffer = loadModelFile("esrgan_fp16.tflite");
+
+        // Interpreter-Optionen: z.B. mehrere Threads, GPU etc.
+        Interpreter.Options opts = new Interpreter.Options()
+                .setNumThreads(4);
+                //.addDelegate(new GpuDelegate());  // optional: GPU-Beschleunigung
+
+        esrganInterpreter = new Interpreter(modelBuffer, opts);
+    }
+
+    /** Lädt eine .tflite aus dem assets-Ordner und returned einen MappedByteBuffer */
+    private MappedByteBuffer loadModelFile(String assetFilename) throws IOException {
+        AssetFileDescriptor fileDescriptor = context.getAssets().openFd(assetFilename);
+        FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
+        FileChannel channel = inputStream.getChannel();
+        long startOffset = fileDescriptor.getStartOffset();
+        long declaredLength = fileDescriptor.getDeclaredLength();
+        return channel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+    }
+
+    // Hilfsmethoden zum Konvertieren Bitmap ↔ Float-Array:
+    private float[][][][] makeInputBuffer(Bitmap bmp) {
+        int w = bmp.getWidth(), h = bmp.getHeight();
+        float[][][][] buf = new float[1][h][w][3];
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int p = bmp.getPixel(x, y);
+                buf[0][y][x][0] = Color.red(p);
+                buf[0][y][x][1] = Color.green(p);
+                buf[0][y][x][2] = Color.blue(p);
+            }
+        }
+        return buf;
+    }
+
+    private Bitmap makeBitmapFromOutput(float[][][][] buf) {
+        int h = buf[0].length, w = buf[0][0].length;
+        Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int r = MathUtils.clamp(Math.round(buf[0][y][x][0]), 0, 255);
+                int g = MathUtils.clamp(Math.round(buf[0][y][x][1]), 0, 255);
+                int b = MathUtils.clamp(Math.round(buf[0][y][x][2]), 0, 255);
+                bmp.setPixel(x, y, Color.rgb(r, g, b));
+            }
+        }
+        return bmp;
     }
 }
 

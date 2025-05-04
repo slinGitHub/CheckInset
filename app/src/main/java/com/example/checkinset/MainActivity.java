@@ -64,6 +64,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.graphics.Color;
+
 public class MainActivity extends AppCompatActivity implements ImageManager.ImageResultCallback {
 
     private LinearLayout imageContainer;
@@ -77,6 +79,77 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             0xFF22A884, 0xFF44BF70, 0xFF7AD151, 0xFFBADE24,
             0xFFFDE725, 0xFFFFFF00
     };
+
+    // Magma-Farben
+    private static final int[] MAGMA_COLORS = {
+            0xFF000004, 0xFF1B0C41, 0xFF4A0C6B, 0xFF781C6D,
+            0xFFA6365D, 0xFFF1605D, 0xFFFCA85E, 0xFFFFE99F,
+            0xFFFFFCBF, 0xFFFFFDD9
+    };
+
+    // Viridis Color Map Customized : Green to purple (13 Entrys)
+    private static final int[] VIRIDIS_COLORS = {
+            0xFFB6DE2B, // Grün (0% Transparenz)
+            0xF96CCE59, // 5% Transparenz
+            0xE91F9D8A, // 10% Transparenz
+            0xD826838F, // 15% Transparenz
+            0xCC31688E, // 20% Transparenz
+            0xBF3E4A89, // 25% Transparenz
+            0xB2482878, // 30% Transparenz
+            0xA0440154  // Lila (37.5% Transparenz)
+    };
+
+    private static final int[] Special_Colors = {
+            0x4075D054,
+            0x00FDBE3D
+    };
+
+    public static int[] generateColormap(int steps, int[] baseColors) {
+        if (steps <= 1) {
+            throw new IllegalArgumentException("Die Anzahl der Schritte muss größer als 1 sein.");
+        }
+
+        int[] colormap = new int[steps];
+        float stepSize = (float) (baseColors.length - 1) / (steps - 1);
+
+        for (int i = 0; i < steps; i++) {
+            float position = i * stepSize;
+            int lowerIndex = (int) Math.floor(position);
+            int upperIndex = Math.min(lowerIndex + 1, baseColors.length - 1);
+            float fraction = position - lowerIndex;
+
+            colormap[i] = interpolateColor(baseColors[lowerIndex], baseColors[upperIndex], fraction);
+        }
+
+        return colormap;
+    }
+
+    /**
+     * Interpoliert zwischen zwei Farben.
+     *
+     * @param color1 Erste Farbe (ARGB).
+     * @param color2 Zweite Farbe (ARGB).
+     * @param fraction Interpolationsfaktor (0.0 bis 1.0).
+     * @return Die interpolierte Farbe (ARGB).
+     */
+    private static int interpolateColor(int color1, int color2, float fraction) {
+        int a1 = Color.alpha(color1);
+        int r1 = Color.red(color1);
+        int g1 = Color.green(color1);
+        int b1 = Color.blue(color1);
+
+        int a2 = Color.alpha(color2);
+        int r2 = Color.red(color2);
+        int g2 = Color.green(color2);
+        int b2 = Color.blue(color2);
+
+        int a = (int) (a1 + fraction * (a2 - a1));
+        int r = (int) (r1 + fraction * (r2 - r1));
+        int g = (int) (g1 + fraction * (g2 - g1));
+        int b = (int) (b1 + fraction * (b2 - b1));
+
+        return Color.argb(a, r, g, b);
+    }
 
     // Globales Datenmodell, geladen/gespeichert via JSON
     private DataModel dataModel;
@@ -248,7 +321,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         loadUIFromDataModel();
 
         // ImageManager initialisieren
-        imageManager = new ImageManager(this, this);
+        imageManager = new ImageManager(this, this, this);
 
         dataIOManager = new DataIOManager(this, dataModel, dataStorage, this);
 
@@ -330,9 +403,13 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             importData();
             return true;
         } else if (item.getItemId() == R.id.action_toggle_protected_images) {
-                protectedViewOn = !protectedViewOn; //Toggle protected view
-                item.setIcon(protectedViewOn ? R.drawable.ic_wappen_on : R.drawable.ic_wappen_off);
-                loadUIFromDataModel();
+            protectedViewOn = !protectedViewOn; //Toggle protected view
+            item.setIcon(protectedViewOn ? R.drawable.ic_wappen_on : R.drawable.ic_wappen_off);
+            loadUIFromDataModel();
+            return true;
+        } else if (item.getItemId() == R.id.action_settings) {
+                Intent intent = new Intent(this, SettingsActivity.class);
+                startActivity(intent);
                 return true;
         } else if (item.getItemId() == R.id.action_aboutCheckInset) {
                 Intent intent_settings_about = new Intent(this, SettingsAboutActivity.class);
@@ -432,11 +509,6 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             }
         }
 
-        TextView titleView = new TextView(this);
-        titleView.setText(imageModel.title);
-        titleView.setTextSize(18);
-        titleView.setTextColor(Color.WHITE); // Weißer Text
-
         CustomImageLayout customLayout = new CustomImageLayout(this);
         customLayout.setImageBitmap(bitmap);
 
@@ -479,10 +551,29 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             return false;
         });
 
+        TextView titleView = new TextView(this);
+        titleView.setText(imageModel.title);
+        titleView.setTextSize(18);
+        titleView.setTextColor(Color.WHITE); // Weißer Text
+        titleView.setBackgroundColor(Color.argb(128, 0, 0, 0)); // 50% transparentes Schwarz
+        titleView.setPadding(8, 8, 8, 8); // Padding für besseren Abstand
+
+        // Layout-Parameter für die Positionierung der Überschrift
+        FrameLayout.LayoutParams titleLayoutParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+
+        titleLayoutParams.gravity = Gravity.TOP | Gravity.START; // Links oben positionieren
+        titleView.setLayoutParams(titleLayoutParams);
+
+        // Überschrift direkt zum CustomImageLayout hinzufügen
+        customLayout.addView(titleView);
+
+        // CustomImageLayout in den Container einfügen
         LinearLayout containerLayout = new LinearLayout(this);
         containerLayout.setOrientation(LinearLayout.VERTICAL);
         containerLayout.setPadding(0, 16, 0, 16);
-        containerLayout.addView(titleView);
         containerLayout.addView(customLayout, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -671,6 +762,10 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             View circle = pointView.findViewById(R.id.point_circle);
             // import android.graphics.Color;
             setCircleBackground(circle, Color.WHITE);
+
+            //Text im Kreis schwarz einfärben
+            TextView overlay = pointView.findViewById(R.id.point_label);
+            overlay.setTextColor(Color.BLACK);
         }
 
         if (waveAnimator != null) {
@@ -694,23 +789,6 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         waveAnimator.start();
     }
 
-    private void resetAllPointViews(CustomImageLayout layout) {
-        for (int i = 0; i < layout.getChildCount(); i++) {
-            View child = layout.getChildAt(i);
-            if (!(child.getTag() instanceof PointModel)) continue;
-
-            // Skalierung zurücksetzen (falls du doch skaliert hattest)
-            child.animate().cancel();
-            child.setScaleX(1f);
-            child.setScaleY(1f);
-
-            // Kreis wieder in der Original-Farbe zeichnen
-            View circle = child.findViewById(R.id.point_circle);
-            PointModel pm = (PointModel) child.getTag();
-            setCircleBackground(circle, pm.color);
-        }
-    }
-
     private View getPointView(CustomImageLayout layout, PointModel point) {
         for (int i = 0; i < layout.getChildCount(); i++) {
             View child = layout.getChildAt(i);
@@ -724,26 +802,27 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         return null;
     }
 
-
     private void refreshAllPoints() {
-        String testLabel = "";
+
+        //Wieviel Tage soll der Viridis Farbübergang angwendet werden?
+        int numColorDays = SettingsManager.getDaysForViridisColors(this);
+        int labelOffDays = SettingsManager.getDaysForLabelOff(this);
+        int[] CUSTOM_COLORMAP = generateColormap(numColorDays,VIRIDIS_COLORS);
 
         //Wave stoppen
         if (waveAnimator != null) {
             waveAnimator.stop();
         }
 
-        // Farben neu berechnen wie gehabt
         List<PointModel> all = dataModel.images.stream()
                 .flatMap(im -> im.points.stream())
                 .sorted(Comparator.comparing(p -> p.timestamp))
                 .collect(Collectors.toList());
 
-        int total = all.size();
-        int cutoff = Math.max(0, total - 10);
-        for (int i = 0; i < cutoff; i++)  all.get(i).color = 0xFF352A87;
-        for (int i = cutoff; i < total; i++) {
-            all.get(i).color = PARULA_COLORS[10 - (total - i)];
+        for (PointModel point : all) {
+            long daysDifference = getDaysDifference(point.timestamp);
+            int colorIndex = (int) Math.min(daysDifference, CUSTOM_COLORMAP.length - 1); // Begrenze den Index auf die Colormap-Länge
+            point.color = CUSTOM_COLORMAP[colorIndex];
         }
 
         // Über alle Layouts gehen
@@ -759,11 +838,14 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                 setCircleBackground(circle, p.color);
 
                 // Label updaten
-
                 TextView label = wrapper.findViewById(R.id.point_label);
-                label.setText(String.valueOf(getDaysDifference(p.timestamp)));
-                testLabel = String.valueOf(getDaysDifference(p.timestamp));
-                Log.d("RefreshPoints", "Updating point with timestamp: " + p.timestamp + " String: " + testLabel);
+                long daysDifference = getDaysDifference(p.timestamp);
+                if (daysDifference > labelOffDays) {
+                    label.setText(""); // Kein Label anzeigen
+                } else {
+                    label.setText(String.valueOf(daysDifference));
+                    label.setTextColor(Color.WHITE);
+                }
             }
         }
     }
@@ -772,6 +854,8 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         GradientDrawable gd = new GradientDrawable();
         gd.setShape(GradientDrawable.OVAL);
         gd.setColor(color);
+        int alpha = Color.alpha(color);
+        gd.setAlpha(alpha);
         view.setBackground(gd);
     }
 

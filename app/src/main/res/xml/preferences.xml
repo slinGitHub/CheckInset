@@ -1,0 +1,21 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="Label-Einstellungen">
+        <EditTextPreference
+            android:key="days_for_label_off"
+            android:title="Tage für Label ausblenden"
+            android:dialogTitle="Tage für Label ausblenden"
+            android:inputType="number"
+            android:defaultValue="60" />
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Farb-Einstellungen">
+        <EditTextPreference
+            android:key="days_for_viridis_colors"
+            android:title="Tage für Viridis-Farben"
+            android:dialogTitle="Tage für Viridis-Farben"
+            android:inputType="number"
+            android:defaultValue="30" />
+    </PreferenceCategory>
+
+</PreferenceScreen>

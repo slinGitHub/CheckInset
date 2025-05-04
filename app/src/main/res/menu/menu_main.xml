@@ -20,6 +20,11 @@
         android:showAsAction="never" />
 
     <item
+        android:id="@+id/action_settings"
+        android:title="Settings"
+        android:showAsAction="never" />
+
+    <item
         android:id="@+id/action_export_data"
         android:title="Export Data"
         android:icon="@android:drawable/ic_menu_delete"
@@ -35,5 +40,6 @@
         android:id="@+id/action_aboutCheckInset"
         android:title="About CheckInset"
         android:icon="@android:drawable/ic_menu_delete"
+        android:orderInCategory="100"
         android:showAsAction="never" />
 </menu>
