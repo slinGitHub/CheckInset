@@ -99,6 +99,11 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             0xA0440154  // Lila (37.5% Transparenz)
     };
 
+    private static final int[] New_Colors = {
+            0xFF0E8393, // Blau (0% Transparenz
+            0xA0440154  // Lila (37.5% Transparenz)
+    };
+
     private static final int[] Special_Colors = {
             0x4075D054,
             0x00FDBE3D
@@ -629,6 +634,12 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        refreshAllPoints();
+    }
+
+    @Override
     public void onBackPressed() {
         int state = bottomSheetBehavior.getState();
         if (state == BottomSheetBehavior.STATE_EXPANDED
@@ -804,10 +815,13 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
     private void refreshAllPoints() {
 
-        //Wieviel Tage soll der Viridis Farbübergang angwendet werden?
-        int numColorDays = SettingsManager.getDaysForViridisColors(this);
+        int labelFadedDays = SettingsManager.getlabelFadedDaysOff(this);; // Ab wieviel Tagen soll das Label ausgeblendet werden?
+
         int labelOffDays = SettingsManager.getDaysForLabelOff(this);
-        int[] CUSTOM_COLORMAP = generateColormap(numColorDays,VIRIDIS_COLORS);
+
+
+
+        //int[] CUSTOM_COLORMAP = generateColormap(numColorDays,New_Colors);
 
         //Wave stoppen
         if (waveAnimator != null) {
@@ -821,8 +835,8 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
         for (PointModel point : all) {
             long daysDifference = getDaysDifference(point.timestamp);
-            int colorIndex = (int) Math.min(daysDifference, CUSTOM_COLORMAP.length - 1); // Begrenze den Index auf die Colormap-Länge
-            point.color = CUSTOM_COLORMAP[colorIndex];
+            //int colorIndex = (int) Math.min(daysDifference, CUSTOM_COLORMAP.length - 1); // Begrenze den Index auf die Colormap-Länge
+            point.color = 0xFF602D58;
         }
 
         // Über alle Layouts gehen
@@ -840,12 +854,54 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                 // Label updaten
                 TextView label = wrapper.findViewById(R.id.point_label);
                 long daysDifference = getDaysDifference(p.timestamp);
-                if (daysDifference > labelOffDays) {
-                    label.setText(""); // Kein Label anzeigen
-                } else {
+
+                // Label anzeigen
+                if (daysDifference <= labelOffDays) {
                     label.setText(String.valueOf(daysDifference));
                     label.setTextColor(Color.WHITE);
+
+                //Label anpassen
+                } else {
+
+                    if (daysDifference <= labelFadedDays) {
+                        label.setText(""); // Kein Label anzeigen
+                        //int fadedColor = 0xCC602D58; // ARGB: 80% Alpha, Lila
+                        int fadedColor = 0xCCCCCCCC; // ARGB: 80% Alpha, hellgrau
+                        setCircleBackground(circle, fadedColor);
+
+                        int baseSize = (int) (16 * getResources().getDisplayMetrics().density);
+
+                        // Linearer Skalierungsfaktor von 1.0 (100%) bis 0.25 (25%)
+                        float t = (float) (daysDifference - labelOffDays) / (labelFadedDays - labelOffDays);
+                        t = Math.max(0f, Math.min(1f, t)); // Clamp zwischen 0 und 1
+                        float scale = 1.0f - t * 0.75f; // 1.0 -> 0.25
+
+                        int newSize = (int) (baseSize * scale);
+
+                        // Kreisgröße setzen
+                        ViewGroup.LayoutParams params = circle.getLayoutParams();
+                        params.width = newSize;
+                        params.height = newSize;
+                        circle.setLayoutParams(params);
+
+                        // Wrapper-Layout neu positionieren, damit der Kreis mittig bleibt
+                        FrameLayout.LayoutParams wrapperLp = (FrameLayout.LayoutParams) wrapper.getLayoutParams();
+                        int actualX = (int) (layout.getWidth() * p.xPercent) - newSize / 2;
+                        int actualY = (int) (layout.getHeight() * p.yPercent) - newSize / 2;
+                        wrapperLp.width = newSize;
+                        wrapperLp.height = newSize;
+                        wrapperLp.leftMargin = actualX;
+                        wrapperLp.topMargin = actualY;
+                        wrapper.setLayoutParams(wrapperLp);
+
+                    } else {
+                        // Punkt aus dem Layout entfernen
+                        layout.removeView(wrapper);
+                        continue;
+
+                    }
                 }
+
             }
         }
     }

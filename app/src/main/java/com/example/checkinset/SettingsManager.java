@@ -8,11 +8,12 @@ public class SettingsManager {
 
     public static int getDaysForLabelOff(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        return Integer.parseInt(prefs.getString("days_for_label_off", "60"));
+        return Integer.parseInt(prefs.getString("days_for_label_off", "30"));
     }
 
-    public static int getDaysForViridisColors(Context context) {
+    public static int getlabelFadedDaysOff(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        return Integer.parseInt(prefs.getString("days_for_viridis_colors", "30"));
+        return Integer.parseInt(prefs.getString("days_for_faded_label_off", "60"));
     }
+
 }

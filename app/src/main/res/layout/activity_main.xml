@@ -59,7 +59,7 @@
         android:elevation="4dp"
         android:src="@android:drawable/ic_input_add"
         app:backgroundTint="@color/DarkColor1"
-        app:fabSize="normal"
+        app:fabSize="mini"
         app:tint="@android:color/white"
         android:contentDescription="Add Point"
         android:layout_gravity="bottom|end" />
