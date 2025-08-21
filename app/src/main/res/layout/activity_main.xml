@@ -37,10 +37,10 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            android:clipToPadding="false"
             android:clipChildren="false"
-            android:paddingBottom="200dp"> <!-- Höhe des Bottom Sheets, nicht berechnet!! -->
+            android:clipToPadding="false"
+            android:paddingBottom="300dp"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"> <!-- Höhe des Bottom Sheets, nicht berechnet!! -->
 
             <LinearLayout
                 android:id="@+id/imageContainer"
@@ -130,7 +130,7 @@
                 android:text="X_left"
                 android:textSize="16sp"
                 android:textColor="#000000"
-                android:gravity="center" />
+                android:gravity="left" />
 
             <TextView
                 android:id="@+id/tvCoordinateX"
@@ -142,7 +142,7 @@
                 android:text="0"
                 android:textSize="16sp"
                 android:textColor="#000000"
-                android:gravity="center"
+                android:gravity="left"
                 android:clickable="true"
                 android:focusable="true" />
 
@@ -151,10 +151,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:padding="8dp"
                 android:text="Y_top"
                 android:textSize="16sp"
                 android:textColor="#000000"
-                android:gravity="center" />
+                android:gravity="left" />
 
             <TextView
                 android:id="@+id/tvCoordinateY"
@@ -170,6 +171,55 @@
                 android:clickable="true"
                 android:focusable="true" />
         </LinearLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/leftBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toStartOf="@id/middleGuideline"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <TextView
+                    android:id="@+id/tvLabelMark"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Mark"
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:gravity="left" />
+
+                <TextView
+                    android:id="@+id/tvMark"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@drawable/clickable_box"
+                    android:padding="8dp"
+                    android:text="0"
+                    android:textSize="16sp"
+                    android:textColor="#000000"
+                    android:gravity="left"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+            </LinearLayout>
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/middleGuideline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintGuide_percent="0.5" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
 
         <!-- Button zum Löschen des aktuell bearbeiteten Punktes -->
         <Button

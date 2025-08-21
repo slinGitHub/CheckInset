@@ -3,25 +3,20 @@
 
     <item
         android:id="@+id/action_capture_image"
-        android:title="Add Image with Camera"
+        android:title="Bild aufnehmen"
         android:icon="@android:drawable/ic_menu_camera"
         android:showAsAction="never" />
 
     <item
         android:id="@+id/action_pick_image"
-        android:title="Add Image from Gallery"
+        android:title="Bild aus Galerie wählen"
         android:icon="@android:drawable/ic_menu_gallery"
         android:showAsAction="never" />
 
     <item
         android:id="@+id/action_delete_image"
-        android:title="Delete Image"
+        android:title="Bild löschen"
         android:icon="@android:drawable/ic_menu_delete"
-        android:showAsAction="never" />
-
-    <item
-        android:id="@+id/action_settings"
-        android:title="Settings"
         android:showAsAction="never" />
 
     <item
@@ -38,8 +33,8 @@
 
     <item
         android:id="@+id/action_aboutCheckInset"
-        android:title="About CheckInset"
+        android:title="About Check Inset"
         android:icon="@android:drawable/ic_menu_delete"
-        android:orderInCategory="100"
         android:showAsAction="never" />
+
 </menu>

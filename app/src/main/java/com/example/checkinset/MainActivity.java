@@ -171,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
     // Bottom Sheet Komponenten
     private LinearLayout bottomSheet;
-    private TextView tvTimestamp, tvCoordinateX, tvCoordinateY;
+    private TextView tvTimestamp, tvCoordinateX, tvCoordinateY, tvMark;
     private Button btnDeletePoint;
     private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
 
@@ -207,6 +207,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         tvTimestamp = findViewById(R.id.tvTimestamp);
         tvCoordinateX = findViewById(R.id.tvCoordinateX);
         tvCoordinateY = findViewById(R.id.tvCoordinateY);
+        tvMark = findViewById(R.id.tvMark);
         btnDeletePoint = findViewById(R.id.btnDeletePoint);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
 
@@ -298,6 +299,23 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             });
         });
 
+        tvMark.setOnClickListener(v -> {
+            float currentMark = currentPoint != null ? currentPoint.mark : 0f;
+            showCoordinateEditDialog("Mark", currentMark, newValue -> {
+                if (currentPoint != null) {
+                    int markValue = (int) newValue;
+                    if (markValue >= 0 && markValue <= 3) {
+                        currentPoint.mark = markValue;
+                        tvMark.setText(String.format(Locale.getDefault(), "%d", markValue));
+                        loadUIFromDataModel();
+                        DataStorage.saveData(MainActivity.this, dataModel);
+                    } else {
+                        Toast.makeText(MainActivity.this, "Only 0,1,2,3 allowed.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
+        });
+
         // Aktion des Lösch-Buttons im Bottom Sheet
         btnDeletePoint.setOnClickListener(v -> {
             if (currentPoint != null && currentLayout != null) {
@@ -351,11 +369,11 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                         try {
                             dataIOManager.importDataFromZip(uri);
                         } catch (IOException | JSONException e) {
-                            Toast.makeText(this, "Error when importing the data: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            Toast.makeText(this, "Fehler beim Importieren der Daten: " + e.getMessage(), Toast.LENGTH_LONG).show();
                             e.printStackTrace();
                         }
                     } else {
-                        Toast.makeText(this, "Import canceled.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Import abgebrochen.", Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -412,14 +430,10 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             item.setIcon(protectedViewOn ? R.drawable.ic_wappen_on : R.drawable.ic_wappen_off);
             loadUIFromDataModel();
             return true;
-        } else if (item.getItemId() == R.id.action_settings) {
-                Intent intent = new Intent(this, SettingsActivity.class);
-                startActivity(intent);
-                return true;
         } else if (item.getItemId() == R.id.action_aboutCheckInset) {
-                Intent intent_settings_about = new Intent(this, SettingsAboutActivity.class);
-                startActivity(intent_settings_about);
-                return true;
+            Intent intent_settings_about = new Intent(this, SettingsAboutActivity.class);
+            startActivity(intent_settings_about);
+            return true;
         } else {
             return super.onOptionsItemSelected(item);
         }
@@ -658,6 +672,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         PointModel p = new PointModel();
         p.xPercent = xPercent;
         p.yPercent = yPercent;
+
         p.timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
         p.color = 0;
 
@@ -759,6 +774,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         int absY = (int) (layout.getHeight() * point.yPercent);
         tvCoordinateX.setText(String.valueOf(absX));
         tvCoordinateY.setText(String.valueOf(absY));
+        tvMark.setText(String.valueOf(point.mark)); // Mark-Wert anzeigen
 
         // Bottom Sheet anzeigen
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);

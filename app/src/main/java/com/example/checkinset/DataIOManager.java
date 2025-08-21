@@ -69,6 +69,7 @@ public class DataIOManager {
                     JSONObject pointJson = new JSONObject();
                     pointJson.put("xPercent", point.xPercent);
                     pointJson.put("yPercent", point.yPercent);
+                    pointJson.put("mark", point.mark);
                     pointJson.put("timestamp", point.timestamp);
                     pointsJson.put(pointJson);
                 }
@@ -192,6 +193,7 @@ public class DataIOManager {
                     PointModel pointModel = new PointModel();
                     pointModel.xPercent = (float) pointJson.getDouble("xPercent");
                     pointModel.yPercent = (float) pointJson.getDouble("yPercent");
+                    pointModel.mark = pointJson.optInt("mark", 0);
                     pointModel.timestamp = pointJson.getString("timestamp");
                     imgModel.points.add(pointModel);
                 }
