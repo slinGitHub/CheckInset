@@ -184,6 +184,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     private DataIOManager dataIOManager;
 
     private boolean protectedViewOn = true; // default: an
+    private boolean historyViewOn = false;
     private MenuItem toggleItem;
 
     private WavePulseAnimator waveAnimator;
@@ -424,6 +425,11 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             return true;
         } else if (id == R.id.action_import_data) {
             importData();
+            return true;
+        } else if (item.getItemId() == R.id.action_toggle_history) {
+            historyViewOn = !historyViewOn; //Toggle protected view
+            item.setIcon(historyViewOn ? R.drawable.outline_history_24 : R.drawable.outline_history_toggle_off_24);
+            loadUIFromDataModel();
             return true;
         } else if (item.getItemId() == R.id.action_toggle_protected_images) {
             protectedViewOn = !protectedViewOn; //Toggle protected view
@@ -871,50 +877,94 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                 TextView label = wrapper.findViewById(R.id.point_label);
                 long daysDifference = getDaysDifference(p.timestamp);
 
-                // Label anzeigen
-                if (daysDifference <= labelOffDays) {
-                    label.setText(String.valueOf(daysDifference));
-                    label.setTextColor(Color.WHITE);
+                if (historyViewOn) {
+                    // ✅ Alle Punkte behalten, keine Zahl anzeigen
+                    label.setText("");
+                    label.setTextColor(Color.TRANSPARENT); // optional, sonst leer
 
-                //Label anpassen
+                    // Kreis auf 25% skalieren
+                    int baseSize = (int) (16 * getResources().getDisplayMetrics().density);
+                    int newSize = (int) (baseSize * 0.75f);
+
+                    // Farbe
+                    // 100% — FF / 75% — BF / 50% — 7F / 25% — 3F
+                    int alpha = 0xBF << 24; // 50% Alpha = 0x80
+                    int fadedColor =  alpha | 0x00CCCCCC; // 0x40 = ~25% Alph
+
+                    if (p.mark == 1) {
+                        fadedColor = alpha | 0x00009A00; // 0x40 = ~25% Alpha
+                    } else if (p.mark == 2) {
+                        fadedColor = alpha | 0x00F79E1B; // 0x40 = ~25% Alpha
+                    } else if (p.mark == 3) {
+                        fadedColor = alpha | 0x00FF5F00; // 0x40 = ~25% Alpha
+                    }
+
+                    setCircleBackground(circle, fadedColor);
+
+                    // Kreisgröße setzen
+                    ViewGroup.LayoutParams params = circle.getLayoutParams();
+                    params.width = newSize;
+                    params.height = newSize;
+                    circle.setLayoutParams(params);
+
+                    // Wrapper-Layout neu positionieren, damit der Kreis mittig bleibt
+                    FrameLayout.LayoutParams wrapperLp = (FrameLayout.LayoutParams) wrapper.getLayoutParams();
+                    int actualX = (int) (layout.getWidth() * p.xPercent) - newSize / 2;
+                    int actualY = (int) (layout.getHeight() * p.yPercent) - newSize / 2;
+                    wrapperLp.width = newSize;
+                    wrapperLp.height = newSize;
+                    wrapperLp.leftMargin = actualX;
+                    wrapperLp.topMargin = actualY;
+                    wrapper.setLayoutParams(wrapperLp);
+
                 } else {
 
-                    if (daysDifference <= labelFadedDays) {
-                        label.setText(""); // Kein Label anzeigen
-                        //int fadedColor = 0xCC602D58; // ARGB: 80% Alpha, Lila
-                        int fadedColor = 0xCCCCCCCC; // ARGB: 80% Alpha, hellgrau
-                        setCircleBackground(circle, fadedColor);
+                    // Label anzeigen
+                    if (daysDifference <= labelOffDays) {
+                        label.setText(String.valueOf(daysDifference));
+                        label.setTextColor(Color.WHITE);
 
-                        int baseSize = (int) (16 * getResources().getDisplayMetrics().density);
-
-                        // Linearer Skalierungsfaktor von 1.0 (100%) bis 0.25 (25%)
-                        float t = (float) (daysDifference - labelOffDays) / (labelFadedDays - labelOffDays);
-                        t = Math.max(0f, Math.min(1f, t)); // Clamp zwischen 0 und 1
-                        float scale = 1.0f - t * 0.75f; // 1.0 -> 0.25
-
-                        int newSize = (int) (baseSize * scale);
-
-                        // Kreisgröße setzen
-                        ViewGroup.LayoutParams params = circle.getLayoutParams();
-                        params.width = newSize;
-                        params.height = newSize;
-                        circle.setLayoutParams(params);
-
-                        // Wrapper-Layout neu positionieren, damit der Kreis mittig bleibt
-                        FrameLayout.LayoutParams wrapperLp = (FrameLayout.LayoutParams) wrapper.getLayoutParams();
-                        int actualX = (int) (layout.getWidth() * p.xPercent) - newSize / 2;
-                        int actualY = (int) (layout.getHeight() * p.yPercent) - newSize / 2;
-                        wrapperLp.width = newSize;
-                        wrapperLp.height = newSize;
-                        wrapperLp.leftMargin = actualX;
-                        wrapperLp.topMargin = actualY;
-                        wrapper.setLayoutParams(wrapperLp);
 
                     } else {
-                        // Punkt aus dem Layout entfernen
-                        layout.removeView(wrapper);
-                        continue;
 
+                        // Label anpassen
+                        if (daysDifference <= labelFadedDays) {
+                            label.setText(""); // Kein Label anzeigen
+                            //int fadedColor = 0xCC602D58; // ARGB: 80% Alpha, Lila
+                            int fadedColor = 0xCCCCCCCC; // ARGB: 80% Alpha, hellgrau
+                            setCircleBackground(circle, fadedColor);
+
+                            int baseSize = (int) (16 * getResources().getDisplayMetrics().density);
+
+                            // Linearer Skalierungsfaktor von 1.0 (100%) bis 0.25 (25%)
+                            float t = (float) (daysDifference - labelOffDays) / (labelFadedDays - labelOffDays);
+                            t = Math.max(0f, Math.min(1f, t)); // Clamp zwischen 0 und 1
+                            float scale = 1.0f - t * 0.75f; // 1.0 -> 0.25
+
+                            int newSize = (int) (baseSize * scale);
+
+                            // Kreisgröße setzen
+                            ViewGroup.LayoutParams params = circle.getLayoutParams();
+                            params.width = newSize;
+                            params.height = newSize;
+                            circle.setLayoutParams(params);
+
+                            // Wrapper-Layout neu positionieren, damit der Kreis mittig bleibt
+                            FrameLayout.LayoutParams wrapperLp = (FrameLayout.LayoutParams) wrapper.getLayoutParams();
+                            int actualX = (int) (layout.getWidth() * p.xPercent) - newSize / 2;
+                            int actualY = (int) (layout.getHeight() * p.yPercent) - newSize / 2;
+                            wrapperLp.width = newSize;
+                            wrapperLp.height = newSize;
+                            wrapperLp.leftMargin = actualX;
+                            wrapperLp.topMargin = actualY;
+                            wrapper.setLayoutParams(wrapperLp);
+
+                        } else {
+                            // Punkt aus dem Layout entfernen
+                            layout.removeView(wrapper);
+                            continue;
+
+                        }
                     }
                 }
 

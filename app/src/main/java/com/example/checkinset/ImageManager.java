@@ -70,11 +70,6 @@ public class ImageManager {
         this.activity = activity;
         this.callback = callback;
         this.context = context.getApplicationContext();
-        try {
-            initEsrgan();
-        } catch (IOException e) {
-            //Log.e("ImageManager", "Failed to load ESRGAN model", e);
-        }
     }
 
     public void setCurrentImageTitle(String title) {
@@ -159,22 +154,6 @@ public class ImageManager {
             }
         }
         return bmp;
-    }
-
-    // Interpreter initialisieren (einmalig)
-    private void initEsrgan(Context context) throws IOException {
-        if (esrganInterpreter == null) {
-            AssetFileDescriptor fileDescriptor = context.getAssets().openFd("edsr.tflite");
-            FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
-            FileChannel fileChannel = inputStream.getChannel();
-            long startOffset = fileDescriptor.getStartOffset();
-            long declaredLength = fileDescriptor.getDeclaredLength();
-            MappedByteBuffer modelBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
-            // GPU Delegate aktivieren
-            gpuDelegate = new GpuDelegate();
-            Interpreter.Options options = new Interpreter.Options().addDelegate(gpuDelegate);
-            esrganInterpreter = new Interpreter(modelBuffer, options);
-        }
     }
 
     private void processCapturedImage() {
@@ -371,19 +350,6 @@ public class ImageManager {
             e.printStackTrace();
             return bitmap;
         }
-    }
-
-    /** Lädt den TFLite-Interpreter aus assets/esrgan_fp16.tflite */
-    private void initEsrgan() throws IOException {
-        // Asset in einen MappedByteBuffer laden (effizient für große Modelle)
-        MappedByteBuffer modelBuffer = loadModelFile("esrgan_fp16.tflite");
-
-        // Interpreter-Optionen: z.B. mehrere Threads, GPU etc.
-        Interpreter.Options opts = new Interpreter.Options()
-                .setNumThreads(4);
-                //.addDelegate(new GpuDelegate());  // optional: GPU-Beschleunigung
-
-        esrganInterpreter = new Interpreter(modelBuffer, opts);
     }
 
     /** Lädt eine .tflite aus dem assets-Ordner und returned einen MappedByteBuffer */

@@ -2,8 +2,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_toggle_history"
+        android:icon="@drawable/outline_history_toggle_off_24"
+        android:title="Switch History"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/action_toggle_protected_images"
         android:icon="@drawable/ic_wappen_on"
-        android:title="Wappen Umschalten"
+        android:title="Toggle Protected Images"
         app:showAsAction="always" />
 </menu>
