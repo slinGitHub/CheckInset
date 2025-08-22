@@ -5,7 +5,7 @@
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
         <item name="colorPrimary">#602D58</item>
         <item name="colorPrimaryVariant">#4A1F42</item>
-        <item name="colorOnPrimary">#FFFFFF</item> <!-- Weißer Text auf Buttons -->
+        <item name="colorOnPrimary">#FFFFFF</item>
         <!-- Button-Style -->
         <item name="buttonStyle">@style/CustomButton</item>
 

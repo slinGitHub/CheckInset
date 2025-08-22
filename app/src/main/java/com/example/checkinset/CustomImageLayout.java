@@ -7,6 +7,8 @@ import android.view.MotionEvent;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import androidx.core.content.ContextCompat;
+
 /**
  * FrameLayout, das ein ImageView enthält und Touch-Events abfangen kann,
  * um ggf. einen Punkt zu platzieren.
@@ -35,6 +37,10 @@ public class CustomImageLayout extends FrameLayout {
         imageView = new ImageView(context);
         imageView.setAdjustViewBounds(true);
         imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
+        //Rounded corners
+        imageView.setBackground(ContextCompat.getDrawable(context, R.drawable.rounded_corners));
+        imageView.setClipToOutline(true);
 
         // ImageView als Kind-View hinzufügen
         LayoutParams params = new LayoutParams(

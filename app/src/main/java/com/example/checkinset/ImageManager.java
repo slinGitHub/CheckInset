@@ -169,12 +169,12 @@ public class ImageManager {
         String originalImagePath = saveBitmap(croppedBitmap, "CROPPED_" + timeStamp + ".jpg");
 
         // Das zugeschnittene Bild in Graustufen umwandeln
-        Bitmap grayscaleBitmap = toGrayscale(croppedBitmap, 30);
+        //Bitmap grayscaleBitmap = toGrayscale(croppedBitmap, 5);
 
         // 3. Bild auf Modell-Eingabegröße skalieren (hier: 512x512, passe ggf. an dein Modell an)
         int modelWidth = 512;
         int modelHeight = 512;
-        Bitmap resizedBitmap = Bitmap.createScaledBitmap(grayscaleBitmap, modelWidth, modelHeight, false);
+        Bitmap resizedBitmap = Bitmap.createScaledBitmap(croppedBitmap, modelWidth, modelHeight, false);
 
         // 4. Cartoonisierung: Erzeuge einen Cartoonizer (hier mit Modelltyp MODEL_DR) und führe die Inferenz durch
         Cartoonizer cartoonizer = new Cartoonizer(activity, Cartoonizer.MODEL_DR);

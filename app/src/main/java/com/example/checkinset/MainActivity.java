@@ -1,5 +1,7 @@
 package com.example.checkinset;
 
+import static java.security.AccessController.getContext;
+
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
@@ -37,6 +39,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.core.widget.NestedScrollView;
 
 import com.example.checkinset.model.DataModel;
@@ -204,6 +207,10 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         // Toolbar initialisieren
         Toolbar topAppBar = findViewById(R.id.topAppBar);
         setSupportActionBar(topAppBar);
+
+        topAppBar.bringToFront();
+        ViewCompat.setElevation(topAppBar, getResources().getDisplayMetrics().density * 12); // 12dp in px
+        topAppBar.invalidate();
 
         addPointButton = findViewById(R.id.addPointButton);
         imageContainer = findViewById(R.id.imageContainer);
@@ -590,10 +597,10 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
         TextView titleView = new TextView(this);
         titleView.setText(imageModel.title);
-        titleView.setTextSize(18);
-        titleView.setTextColor(Color.WHITE); // Weißer Text
-        titleView.setBackgroundColor(Color.argb(128, 0, 0, 0)); // 50% transparentes Schwarz
-        titleView.setPadding(8, 8, 8, 8); // Padding für besseren Abstand
+        titleView.setTextSize(16);
+        titleView.setTextColor(ContextCompat.getColor(this, R.color.colorSecondaryBlackText));
+        titleView.setBackground(ContextCompat.getDrawable(this, R.drawable.rounded_corners_image_title));
+        titleView.setPadding(16, 16, 16, 16); // Padding für besseren Abstand
 
         // Layout-Parameter für die Positionierung der Überschrift
         FrameLayout.LayoutParams titleLayoutParams = new FrameLayout.LayoutParams(
@@ -628,6 +635,9 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         });
 
         layoutToImageMap.put(customLayout, imageModel);
+
+
+
     }
 
     @Override
