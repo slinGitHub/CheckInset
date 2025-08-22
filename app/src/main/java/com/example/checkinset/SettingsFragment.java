@@ -28,5 +28,14 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 return (value != null && !value.isEmpty()) ? "Current value: " + value + " days" : "No value set";
             });
         }
+
+        // Maximum points in history view
+        EditTextPreference maxPointsPreference = findPreference("max_points_history");
+        if (maxPointsPreference != null) {
+            maxPointsPreference.setSummaryProvider(preference -> {
+                String value = maxPointsPreference.getText();
+                return (value != null && !value.isEmpty()) ? "Current value: " + value + " points" : "No value set";
+            });
+        }
     }
 }

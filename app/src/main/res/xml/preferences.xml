@@ -17,6 +17,14 @@
             android:inputType="number"
             android:defaultValue="60"
             app:useSimpleSummaryProvider="true"/>
+
+        <EditTextPreference
+            android:key="max_points_history"
+            android:title="Maximum points in history view"
+            android:summary="Set the maximum number of points shown in history view"
+            android:defaultValue="100"
+            android:inputType="number" />
+
     </PreferenceCategory>
 
 </PreferenceScreen>

@@ -1,13 +1,16 @@
 package com.example.checkinset;
 
+import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.GradientDrawable;
 import android.media.ExifInterface;
 import android.net.Uri;
@@ -42,6 +45,7 @@ import com.example.checkinset.model.PointModel;
 import com.example.checkinset.utils.DataStorage;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -188,6 +192,9 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     private MenuItem toggleItem;
 
     private WavePulseAnimator waveAnimator;
+
+    private static final String PREFS_NAME = "donation_prefs";
+    private static final String KEY_LAST_SHOWN = "donation_last_shown";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -409,7 +416,11 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_capture_image) {
+        if (item.getItemId() == R.id.action_settings) {
+            Intent intent = new Intent(this, SettingsActivity.class);
+            startActivity(intent);
+            return true;
+        }else if (id == R.id.action_capture_image) {
             // Vor der Kameraaufnahme evtl. Titel abfragen
             showTitleInputDialog(true);
             return true;
@@ -444,6 +455,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             return super.onOptionsItemSelected(item);
         }
     }
+
 
     private void importData() {
         openFileLauncher.launch("*/*");
@@ -657,6 +669,10 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     protected void onResume() {
         super.onResume();
         refreshAllPoints();
+
+        // Wähle ein View als Parent, z. B. die Root-Layout ID
+        View coordinator = findViewById(R.id.coordinatorLayout);
+        showCoffeeDonationSnackbar(coordinator);
     }
 
     @Override
@@ -838,12 +854,8 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     private void refreshAllPoints() {
 
         int labelFadedDays = SettingsManager.getlabelFadedDaysOff(this);; // Ab wieviel Tagen soll das Label ausgeblendet werden?
-
         int labelOffDays = SettingsManager.getDaysForLabelOff(this);
-
-
-
-        //int[] CUSTOM_COLORMAP = generateColormap(numColorDays,New_Colors);
+        int maxPoints = SettingsManager.getMaxPointsHistory(this);
 
         //Wave stoppen
         if (waveAnimator != null) {
@@ -882,9 +894,9 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                     label.setText("");
                     label.setTextColor(Color.TRANSPARENT); // optional, sonst leer
 
-                    // Kreis auf 25% skalieren
+                    // Kreis
                     int baseSize = (int) (16 * getResources().getDisplayMetrics().density);
-                    int newSize = (int) (baseSize * 0.75f);
+                    int newSize = (int) (baseSize * 0.5f);
 
                     // Farbe
                     // 100% — FF / 75% — BF / 50% — 7F / 25% — 3F
@@ -1000,6 +1012,42 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_180) return 180;
         else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_270) return 270;
         return 0;
+    }
+
+    private void showCoffeeDonationSnackbar(View parentView) {
+        if (!shouldShowDonationSnackbar()) return;
+
+        String message = "Enjoying the app? Donate me a coffee to support its growth! ☕";
+
+        // Snackbar erstellen (LENGTH_INDEFINITE für dauerhaft)
+        Snackbar snackbar = Snackbar.make(parentView, message, Snackbar.LENGTH_INDEFINITE);
+
+        setLastShownSnackbar(); // optional speichern, dass Snackbar gezeigt wurde
+
+        // Support-Button hinzufügen
+        snackbar.setAction("DONATE 5$", v -> {
+            String url = "https://www.paypal.com/donate?hosted_button_id=CF3AHXTKNARRL"; // hier deinen Link einfügen
+            parentView.getContext().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+            snackbar.dismiss();
+        });
+
+        snackbar.setActionTextColor(Color.parseColor("#2A9D8F")); // grün
+        snackbar.show();
+    }
+
+    // Prüfen, ob die Erinnerung angezeigt werden soll
+    private boolean shouldShowDonationSnackbar() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        long lastShown = prefs.getLong(KEY_LAST_SHOWN, 0);
+        long now = System.currentTimeMillis();
+        long threeMonthsMillis = 1000L * 60; // * 60 * 24 * 30 * 3; // ca. 3 Monate
+        return now - lastShown > threeMonthsMillis;
+    }
+
+    // Zeitstempel speichern
+    private void setLastShownSnackbar() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        prefs.edit().putLong(KEY_LAST_SHOWN, System.currentTimeMillis()).apply();
     }
 
 
