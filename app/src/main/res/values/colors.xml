@@ -5,5 +5,6 @@
 
     <color name="DarkColor1">#FF602D58</color>
     <color name="colorBackground">#FFE6E1E5</color>
+    <color name="colorTranspBackground">#AAE6E1E5</color>
     <color name="colorSecondaryBlackText">#FF616161</color>
 </resources>

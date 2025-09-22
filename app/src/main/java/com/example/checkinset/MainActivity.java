@@ -7,6 +7,7 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -40,6 +41,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.widget.NestedScrollView;
 
 import com.example.checkinset.model.DataModel;
@@ -76,7 +78,8 @@ import android.graphics.Color;
 public class MainActivity extends AppCompatActivity implements ImageManager.ImageResultCallback {
 
     private LinearLayout imageContainer;
-    private FloatingActionButton addPointButton;
+    //private FloatingActionButton addPointButton;
+    private ImageButton addPointButton;
     private boolean isAddingPoint = false;
     private boolean isDeletingImage = false;
 
@@ -202,6 +205,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main);
 
         // Toolbar initialisieren
@@ -400,15 +404,6 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.setStatusBarColor(ContextCompat.getColor(this, R.color.DarkColor1)); // Deine lila Farbe
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            View decor = getWindow().getDecorView();
-            decor.setSystemUiVisibility(0); // weiße Icons
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setNavigationBarColor(Color.BLACK);
         }
 
     }

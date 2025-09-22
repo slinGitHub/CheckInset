@@ -53,19 +53,17 @@
         </androidx.core.widget.NestedScrollView>
     </LinearLayout>
 
-    <!-- Floating Action Button für "Punkte setzen" -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/addPointButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:elevation="4dp"
-        android:src="@android:drawable/ic_input_add"
-        app:backgroundTint="@color/DarkColor1"
-        app:fabSize="mini"
-        app:tint="@android:color/white"
-        android:contentDescription="Add Point"
-        android:layout_gravity="bottom|end" />
+    <!-- Floating Action Button für "Punkte setzen"-->
+<!--    <com.google.android.material.floatingactionbutton.FloatingActionButton-->
+<!--        android:id="@+id/addPointButton"-->
+<!--        android:layout_width="56dp"-->
+<!--        android:layout_height="56dp"-->
+<!--        android:layout_margin="16dp"-->
+<!--        android:elevation="4dp"-->
+<!--        android:src="@android:drawable/ic_input_add"-->
+<!--        app:backgroundTint="@color/DarkColor1"-->
+<!--        app:tint="@android:color/white"-->
+<!--        android:layout_gravity="bottom|end" />-->
 
     <!-- Bottom Sheet Layout für die Punktdetails -->
     <LinearLayout
@@ -229,9 +227,22 @@
             android:id="@+id/btnDeletePoint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Delete Point"
             android:layout_marginTop="16dp"
-            android:background="@drawable/rounded_button"/>
+            android:background="@drawable/rounded_button"
+            android:text="Delete Point" />
+
     </LinearLayout>
+
+
+    <ImageButton
+        android:id="@+id/addPointButton"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_margin="20dp"
+        android:elevation="8dp"
+        android:background="@drawable/circular_button"
+        android:src="@android:drawable/ic_input_add"
+        app:tint="@android:color/white"
+        android:layout_gravity="bottom|end"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
