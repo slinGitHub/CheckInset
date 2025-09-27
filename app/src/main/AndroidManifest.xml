@@ -10,7 +10,7 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:allowBackup="true"
-        android:theme="@style/Theme.CheckInset">
+        android:theme="@style/Theme.CheckInset.Light">
 
         <activity android:name=".SettingsAboutActivity"
             android:label="Settings About"
@@ -22,6 +22,7 @@
 
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Base.Theme.CheckInset.Light"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

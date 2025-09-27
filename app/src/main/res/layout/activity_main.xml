@@ -12,14 +12,14 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:elevation="12dp"
-        app:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
-        app:popupTheme="@style/ThemeOverlay.MaterialComponents.Dark"
-        android:background="#602D58"
+        app:theme="@style/ThemeOverlay.MaterialComponents.ActionBar"
+        app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light"
+        android:background="@color/colorBackground"
         android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
         app:title="CheckInset"
         android:layout_gravity="top"
         app:titleTextAppearance="@style/ToolbarTitleBold"
-        android:titleTextColor="@color/colorBackground" />
+        android:titleTextColor="@color/DarkColor1" />
 
     <!-- Hauptinhalt: Ein vertikales Layout mit ScrollView -->
     <LinearLayout
@@ -53,17 +53,19 @@
         </androidx.core.widget.NestedScrollView>
     </LinearLayout>
 
-    <!-- Floating Action Button für "Punkte setzen"-->
-<!--    <com.google.android.material.floatingactionbutton.FloatingActionButton-->
+
+<!--    <ImageButton-->
 <!--        android:id="@+id/addPointButton"-->
-<!--        android:layout_width="56dp"-->
-<!--        android:layout_height="56dp"-->
-<!--        android:layout_margin="16dp"-->
+<!--        android:layout_width="45dp"-->
+<!--        android:layout_height="45dp"-->
+<!--        android:layout_margin="20dp"-->
 <!--        android:elevation="4dp"-->
+<!--        android:background="@drawable/circular_button"-->
 <!--        android:src="@android:drawable/ic_input_add"-->
-<!--        app:backgroundTint="@color/DarkColor1"-->
 <!--        app:tint="@android:color/white"-->
-<!--        android:layout_gravity="bottom|end" />-->
+<!--        android:layout_gravity="bottom|end"/>-->
+
+
 
     <!-- Bottom Sheet Layout für die Punktdetails -->
     <LinearLayout
@@ -73,6 +75,7 @@
         android:orientation="vertical"
         android:background="@android:color/white"
         android:padding="16dp"
+        android:elevation="8dp"
         app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior"
         app:behavior_peekHeight="120dp"
         app:behavior_hideable="false"
@@ -82,24 +85,77 @@
             android:layout_width="36dp"
             android:layout_height="4dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="12dp"
             android:background="@drawable/bg_bottom_sheet_handle"/>
 
+        <!-- Button zum Löschen des aktuell bearbeiteten Punktes -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tvCircleNumber"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:gravity="center"
+                android:text="3"
+                android:textSize="16sp"
+                android:textColor="@android:color/white"
+                android:backgroundTint="#602D58"
+                android:background="@drawable/bg_circle"/>
+
+            <!-- Platzhalter, der alles dazwischen füllt -->
+            <TextView
+                android:id="@+id/tvSpacerText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Days old"
+                android:textSize="16sp"
+                android:textColor="@color/colorSecondaryBlackText" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeletePoint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete Point"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:elevation="8dp"
-            android:layout_margin="16dp">
+            android:weightSum="2"
+            android:layout_marginBottom="8dp">
 
             <TextView
                 android:id="@+id/tvLabelTimestamp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Created on"
-                android:textSize="16sp"
-                android:textColor="#000000"
-                android:layout_gravity="center_vertical" />
+                android:layout_weight="1"
+                style="@style/TextViewTextStyle"
+                android:text="Created on" />
+
+<!--            <TextView-->
+<!--                android:id="@+id/tvLabelTimestamp"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="Created on"-->
+<!--                android:textSize="16sp"-->
+<!--                android:textColor="#000000"-->
+<!--                android:layout_gravity="center_vertical" />-->
 
             <TextView
                 android:id="@+id/tvTimestamp"
@@ -108,9 +164,11 @@
                 android:layout_marginStart="8dp"
                 android:background="@drawable/clickable_box"
                 android:padding="8dp"
+                android:layout_weight="1"
+                android:gravity="center"
                 android:text="2025-04-06 12:00"
                 android:textSize="16sp"
-                android:textColor="#000000"
+                android:textColor="@color/black"
                 android:clickable="true"
                 android:focusable="true" />
         </LinearLayout>
@@ -121,17 +179,25 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginBottom="8dp"
-            android:weightSum="4">
+            android:weightSum="5">
+
+            <TextView
+                android:id="@+id/tvLabelPosition"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Position"
+                style="@style/TextViewTextStyle"
+                android:gravity="left" />
 
             <TextView
                 android:id="@+id/tvLabelX"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="X_left"
-                android:textSize="16sp"
-                android:textColor="#000000"
-                android:gravity="left" />
+                android:text="X"
+                style="@style/TextViewTextStyle"
+                android:gravity="center" />
 
             <TextView
                 android:id="@+id/tvCoordinateX"
@@ -153,10 +219,9 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:padding="8dp"
-                android:text="Y_top"
-                android:textSize="16sp"
-                android:textColor="#000000"
-                android:gravity="left" />
+                android:text="Y"
+                style="@style/TextViewTextStyle"
+                android:gravity="center" />
 
             <TextView
                 android:id="@+id/tvCoordinateY"
@@ -192,8 +257,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Tolerability Rating"
-                    android:textSize="16sp"
-                    android:textColor="#000000"
+                    style="@style/TextViewTextStyle"
                     android:gravity="left" />
 
                 <TextView
@@ -221,28 +285,18 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-
-        <!-- Button zum Löschen des aktuell bearbeiteten Punktes -->
-        <Button
-            android:id="@+id/btnDeletePoint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@drawable/rounded_button"
-            android:text="Delete Point" />
-
     </LinearLayout>
 
-
-    <ImageButton
+    <!-- Floating Action Button für "Punkte setzen"-->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/addPointButton"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_margin="20dp"
-        android:elevation="8dp"
-        android:background="@drawable/circular_button"
+        android:elevation="4dp"
         android:src="@android:drawable/ic_input_add"
-        app:tint="@android:color/white"
-        android:layout_gravity="bottom|end"/>
+        app:backgroundTint="@color/DarkColor1"
+        app:tint="@color/colorBackground"
+        android:layout_gravity="bottom|end" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -48,7 +48,9 @@ import com.example.checkinset.model.DataModel;
 import com.example.checkinset.model.ImageModel;
 import com.example.checkinset.model.PointModel;
 import com.example.checkinset.utils.DataStorage;
+import com.example.checkinset.DateUtils;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -181,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
     // Bottom Sheet Komponenten
     private LinearLayout bottomSheet;
-    private TextView tvTimestamp, tvCoordinateX, tvCoordinateY, tvMark;
+    private TextView tvCircleNumber, tvTimestamp, tvCoordinateX, tvCoordinateY, tvMark;
     private Button btnDeletePoint;
     private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
 
@@ -223,6 +225,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         bottomSheet = findViewById(R.id.bottom_sheet);
         bottomSheet.setBackground(ContextCompat.getDrawable(this, R.drawable.bottom_sheet_background));
 
+        tvCircleNumber = findViewById(R.id.tvCircleNumber);
         tvTimestamp = findViewById(R.id.tvTimestamp);
         tvCoordinateX = findViewById(R.id.tvCoordinateX);
         tvCoordinateY = findViewById(R.id.tvCoordinateY);
@@ -238,14 +241,16 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         tvTimestamp.setOnClickListener(v -> {
             // Versuche das vorhandene Datum/Uhrzeit zu parsen, ansonsten aktuelles Datum/Uhrzeit verwenden
             Calendar calendar = Calendar.getInstance();
-            try {
-                // Erwartetes Format: "yyyy-MM-dd HH:mm"
-                String text = tvTimestamp.getText().toString().trim();
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
-                Date date = sdf.parse(text);
-                calendar.setTime(date);
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (currentPoint != null && currentPoint.timestamp != null) {
+                try {
+                    // Erwartetes Format: "yyyy-MM-dd HH:mm:ss"
+                    String timestamp = currentPoint.timestamp;
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                    Date date = sdf.parse(timestamp);
+                    calendar.setTime(date);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             // Öffne den DatePickerDialog
@@ -397,14 +402,14 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                 });
 
         //Add image of white owl to toolbar
-        getSupportActionBar().setIcon(R.drawable.ic_action_checkinsetbarowl);
+        getSupportActionBar().setIcon(R.drawable.iconsowl_vector_purple);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Window window = getWindow();
-            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(ContextCompat.getColor(this, R.color.DarkColor1)); // Deine lila Farbe
-        }
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//            Window window = getWindow();
+//            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+//            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+//            window.setStatusBarColor(ContextCompat.getColor(this, R.color.colorBackground));
+//        }
 
     }
 
@@ -590,10 +595,8 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             return false;
         });
 
-        TextView titleView = new TextView(this);
+        TextView titleView = new TextView(this, null, 0, R.style.ImageTitle);
         titleView.setText(imageModel.title);
-        titleView.setTextSize(16);
-        titleView.setTextColor(ContextCompat.getColor(this, R.color.colorSecondaryBlackText));
         titleView.setBackground(ContextCompat.getDrawable(this, R.drawable.rounded_corners_image_title));
         titleView.setPadding(16, 16, 16, 16); // Padding für besseren Abstand
 
@@ -795,8 +798,12 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             return;
         }
 
+        //Set Days old
+        tvCircleNumber.setText(String.valueOf(getDaysDifference(point.timestamp)));
+
         // Setze Text für den ausgewählten Punkt
-        tvTimestamp.setText(point.timestamp);
+        tvTimestamp.setText(DateUtils.convertDate(point.timestamp));
+
         int absX = (int) (layout.getWidth() * point.xPercent);
         int absY = (int) (layout.getHeight() * point.yPercent);
         tvCoordinateX.setText(String.valueOf(absX));
@@ -1024,19 +1031,20 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
 
         String message = "Enjoying the app? Donate me a coffee to support its growth! ☕";
 
-        // Snackbar erstellen (LENGTH_INDEFINITE für dauerhaft)
         Snackbar snackbar = Snackbar.make(parentView, message, Snackbar.LENGTH_INDEFINITE);
 
-        setLastShownSnackbar(); // optional speichern, dass Snackbar gezeigt wurde
+        // Snackbar an den Button binden
+        //snackbar.setAnchorView(anchorView);
 
-        // Support-Button hinzufügen
+        setLastShownSnackbar(); // optional
+
         snackbar.setAction("DONATE 5$", v -> {
-            String url = "https://www.paypal.com/donate?hosted_button_id=CF3AHXTKNARRL"; // hier deinen Link einfügen
+            String url = "https://www.paypal.com/donate?hosted_button_id=CF3AHXTKNARRL";
             parentView.getContext().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
             snackbar.dismiss();
         });
 
-        snackbar.setActionTextColor(Color.parseColor("#2A9D8F")); // grün
+        snackbar.setActionTextColor(Color.parseColor("#2A9D8F"));
         snackbar.show();
     }
 

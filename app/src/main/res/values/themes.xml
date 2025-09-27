@@ -1,27 +1,31 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.CheckInset" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.CheckInset.Light" parent="Theme.Material3.Light.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
         <item name="colorPrimary">#602D58</item>
         <item name="colorPrimaryVariant">#4A1F42</item>
         <item name="colorOnPrimary">#FFFFFF</item>
         <!-- Button-Style -->
-        <item name="buttonStyle">@style/CustomButton</item>
+<!--        <item name="buttonStyle">@style/CustomButton</item>-->
 
         <!-- Navigation Bar -->
         <item name="android:navigationBarColor">@color/colorBackground</item>
         <item name="android:windowLightNavigationBar">true</item>
 
+        <!-- Status Bar -->
+        <item name="android:statusBarColor">@color/colorBackground</item>
+        <item name="android:windowLightStatusBar">true</item> <!-- schwarze Icons -->
+
     </style>
 
-    <style name="Theme.CheckInset" parent="Base.Theme.CheckInset" />
+    <style name="Theme.CheckInset.Light" parent="Base.Theme.CheckInset.Light" />
 
     <!-- Eigener Button-Style -->
-    <style name="CustomButton" parent="Widget.MaterialComponents.Button">
-        <item name="android:backgroundTint">#602D58</item>
-        <item name="android:textColor">#FFFFFF</item>
-    </style>
+<!--    <style name="CustomButton" parent="Widget.MaterialComponents.Button">-->
+<!--        <item name="android:backgroundTint">#602D58</item>-->
+<!--        <item name="android:textColor">#FFFFFF</item>-->
+<!--    </style>-->
 
 </resources>
 
