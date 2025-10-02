@@ -23,7 +23,8 @@
         <activity
             android:name=".MainActivity"
             android:theme="@style/Base.Theme.CheckInset.Light"
-            android:exported="true">
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize|stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

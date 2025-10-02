@@ -5,6 +5,7 @@ import static java.security.AccessController.getContext;
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -12,15 +13,20 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Outline;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.LayerDrawable;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -28,6 +34,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
@@ -36,6 +43,7 @@ import android.widget.*;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -53,6 +61,8 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -184,6 +194,9 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     // Bottom Sheet Komponenten
     private LinearLayout bottomSheet;
     private TextView tvCircleNumber, tvTimestamp, tvCoordinateX, tvCoordinateY, tvMark;
+
+    private TextInputEditText pointNotes;
+
     private Button btnDeletePoint;
     private BottomSheetBehavior<LinearLayout> bottomSheetBehavior;
 
@@ -230,6 +243,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         tvCoordinateX = findViewById(R.id.tvCoordinateX);
         tvCoordinateY = findViewById(R.id.tvCoordinateY);
         tvMark = findViewById(R.id.tvMark);
+        pointNotes = findViewById(R.id.pointNotes);
         btnDeletePoint = findViewById(R.id.btnDeletePoint);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
 
@@ -339,6 +353,27 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                 }
             });
         });
+
+        pointNotes.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Keine Aktion erforderlich
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Text im aktuellen PointModel speichern
+                if (currentPoint != null) {
+                    currentPoint.notes = s.toString();
+                    DataStorage.saveData(MainActivity.this, dataModel); // Datenmodell speichern
+                }
+            }
+            @Override
+            public void afterTextChanged(Editable s) {
+                // Keine Aktion erforderlich
+            }
+        });
+
 
         // Aktion des Lösch-Buttons im Bottom Sheet
         btnDeletePoint.setOnClickListener(v -> {
@@ -713,7 +748,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     }
 
     private void addPointView(CustomImageLayout layout, float xPercent, float yPercent, int color, PointModel point) {
-        int size = (int) (16 * getResources().getDisplayMetrics().density);
+        int size = (int) (20 * getResources().getDisplayMetrics().density);
         int actualX = (int) (layout.getWidth() * xPercent) - size / 2;
         int actualY = (int) (layout.getHeight() * yPercent) - size / 2;
 
@@ -728,7 +763,9 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         // 2) Kreis‑View
         View circle = new View(this);
         circle.setId(R.id.point_circle);
-        setCircleBackground(circle, color);
+        setCircleBackground(circle, color, null, 0);
+
+
         wrapper.addView(circle, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -746,6 +783,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                 ViewGroup.LayoutParams.MATCH_PARENT
         ));
     }
+
 
 
     private long getDaysDifference(String timestamp) {
@@ -808,7 +846,8 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         int absY = (int) (layout.getHeight() * point.yPercent);
         tvCoordinateX.setText(String.valueOf(absX));
         tvCoordinateY.setText(String.valueOf(absY));
-        tvMark.setText(String.valueOf(point.mark)); // Mark-Wert anzeigen
+        tvMark.setText(String.valueOf(point.mark));
+        pointNotes.setText(currentPoint.notes);
 
         // Bottom Sheet anzeigen
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
@@ -821,12 +860,10 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         View pointView = getPointView(layout, point);
         if (pointView != null) {
             View circle = pointView.findViewById(R.id.point_circle);
-            // import android.graphics.Color;
-            setCircleBackground(circle, Color.WHITE);
 
             //Text im Kreis schwarz einfärben
-            TextView overlay = pointView.findViewById(R.id.point_label);
-            overlay.setTextColor(Color.BLACK);
+            //TextView overlay = pointView.findViewById(R.id.point_label);
+            //overlay.setTextColor(Color.BLACK);
         }
 
         if (waveAnimator != null) {
@@ -874,33 +911,24 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             waveAnimator.stop();
         }
 
-        List<PointModel> all = dataModel.images.stream()
-                .flatMap(im -> im.points.stream())
-                .sorted(Comparator.comparing(p -> p.timestamp))
-                .collect(Collectors.toList());
-
-        for (PointModel point : all) {
-            long daysDifference = getDaysDifference(point.timestamp);
-            //int colorIndex = (int) Math.min(daysDifference, CUSTOM_COLORMAP.length - 1); // Begrenze den Index auf die Colormap-Länge
-            point.color = 0xFF602D58;
-        }
-
-        // Über alle Layouts gehen
+        // Über alle Bilder gehen
         for (Map.Entry<CustomImageLayout, ImageModel> e : layoutToImageMap.entrySet()) {
             CustomImageLayout layout = e.getKey();
+
+            // Über alle Punkte in diesem Bild gehen
             for (PointModel p : e.getValue().points) {
                 // Container finden
                 View wrapper = (View) layout.findViewWithTag(p);
                 if (wrapper == null) continue;
 
-                // Kreis updaten
+                // Find circle view
                 View circle = wrapper.findViewById(R.id.point_circle);
-                setCircleBackground(circle, p.color);
 
                 // Label updaten
                 TextView label = wrapper.findViewById(R.id.point_label);
                 long daysDifference = getDaysDifference(p.timestamp);
 
+                // History-View!! Alle Punkte anzeigen, keine Zahlen, nur Kreise
                 if (historyViewOn) {
                     // ✅ Alle Punkte behalten, keine Zahl anzeigen
                     label.setText("");
@@ -923,7 +951,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                         fadedColor = alpha | 0x00FF5F00; // 0x40 = ~25% Alpha
                     }
 
-                    setCircleBackground(circle, fadedColor);
+                    setCircleBackground(circle, fadedColor, null, 0);
 
                     // Kreisgröße setzen
                     ViewGroup.LayoutParams params = circle.getLayoutParams();
@@ -946,17 +974,20 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
                     // Label anzeigen
                     if (daysDifference <= labelOffDays) {
                         label.setText(String.valueOf(daysDifference));
-                        label.setTextColor(Color.WHITE);
+                        label.setTextColor(ContextCompat.getColor(this, R.color.DarkColor1));
+                        label.setTypeface(label.getTypeface(), Typeface.BOLD);
 
+                        // Kreisfarbe
+                        setCircleBackground(circle, ContextCompat.getColor(this, R.color.colorBackgroundLight), null, 0);
 
                     } else {
 
-                        // Label anpassen
+                        // Labels nachdem die Tage überschritten sind, ausblenden und Kreis verkleinern
                         if (daysDifference <= labelFadedDays) {
                             label.setText(""); // Kein Label anzeigen
                             //int fadedColor = 0xCC602D58; // ARGB: 80% Alpha, Lila
                             int fadedColor = 0xCCCCCCCC; // ARGB: 80% Alpha, hellgrau
-                            setCircleBackground(circle, fadedColor);
+                            setCircleBackground(circle, fadedColor, null, 0);
 
                             int baseSize = (int) (16 * getResources().getDisplayMetrics().density);
 
@@ -996,13 +1027,19 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         }
     }
 
-    private void setCircleBackground(View view, int color) {
+    private void setCircleBackground(View view, int fillColor, @Nullable Integer strokeColor, int strokeWidthPx) {
         GradientDrawable gd = new GradientDrawable();
         gd.setShape(GradientDrawable.OVAL);
-        gd.setColor(color);
-        int alpha = Color.alpha(color);
+        gd.setColor(fillColor);
+        int alpha = Color.alpha(fillColor);
         gd.setAlpha(alpha);
         view.setBackground(gd);
+
+        // Randfarbe (nur setzen, wenn angegeben)
+        if (strokeColor != null && strokeWidthPx > 0) {
+            gd.setStroke(strokeWidthPx, strokeColor);
+        }
+
     }
 
     private void removeImage(CustomImageLayout layout) {

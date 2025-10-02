@@ -8,5 +8,8 @@ public class PointModel {
     public float yPercent;  // 0..1 relativ zur Bildhöhe
     public String timestamp;
     public int mark = 0; // Default-Wert 0
+
+    public String notes = ""; // Optionaler Kommentar
+
     public int color;       // ARGB-Farbe
 }

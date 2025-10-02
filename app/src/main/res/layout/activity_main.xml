@@ -16,7 +16,7 @@
         app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light"
         android:background="@color/colorBackground"
         android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-        app:title="CheckInset"
+        app:title="SKIN SAFE"
         android:layout_gravity="top"
         app:titleTextAppearance="@style/ToolbarTitleBold"
         android:titleTextColor="@color/DarkColor1" />
@@ -284,6 +284,24 @@
                 app:layout_constraintGuide_percent="1" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            style="@style/Widget.Material3.TextInputLayout.FilledBox"
+            app:hintEnabled="false">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/pointNotes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Add comments here.."
+                android:inputType="textMultiLine"
+                android:minLines="2"
+                android:gravity="top|start"/>
+        </com.google.android.material.textfield.TextInputLayout>
 
     </LinearLayout>
 
