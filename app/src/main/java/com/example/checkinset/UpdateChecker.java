@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -24,6 +25,10 @@ public class UpdateChecker {
     private static final String TAG = "UpdateChecker";
     private static final String VERSION_URL = "https://raw.githubusercontent.com/slinGitHub/CheckInset/master/latest.json";
 
+    private static final String PREFS_NAME = "update_checker_prefs";
+    private static final String PREF_LAST_CHECK = "last_check_time";
+    private static final long THIRTY_DAYS_MILLIS = 30L * 24 * 60 * 60 * 1000; // 30 days
+
     private final Context context;
     private final String currentVersion;
 
@@ -35,7 +40,19 @@ public class UpdateChecker {
         this.currentVersion = currentVersion;
     }
 
-    public void checkForUpdate() {
+    /**
+     * @param manualCheck true if started manually from settings, false if automatic (e.g. app start)
+     */
+    public void checkForUpdate(boolean manualCheck) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        long lastCheck = prefs.getLong(PREF_LAST_CHECK, 0);
+        long now = System.currentTimeMillis();
+
+        if (!manualCheck && (now - lastCheck < THIRTY_DAYS_MILLIS)) {
+            Log.d(TAG, "Skipping update check (last check < 30 days ago).");
+            return;
+        }
+
         executor.execute(() -> {
             try {
                 URL url = new URL(VERSION_URL);
@@ -61,31 +78,37 @@ public class UpdateChecker {
                 handler.post(() -> {
                     if (!currentVersion.equals(latestVersion)) {
                         showUpdateDialog(latestVersion, downloadUrl);
-                    } else {
-                        Toast.makeText(context, context.getString(R.string.toast_up_to_date), Toast.LENGTH_SHORT).show();
+                    } else if (manualCheck) {
+                        // Only show "up to date" if user triggered the check
+                        Toast.makeText(context, "App is up to date", Toast.LENGTH_SHORT).show();
                     }
+
+                    // Save last check time (always after check)
+                    prefs.edit().putLong(PREF_LAST_CHECK, now).apply();
                 });
 
             } catch (Exception e) {
                 Log.e(TAG, "Error while checking for updates", e);
-                handler.post(() ->
-                        Toast.makeText(context, context.getString(R.string.toast_update_failed), Toast.LENGTH_SHORT).show()
-                );
+                handler.post(() -> {
+                    if (manualCheck) {
+                        Toast.makeText(context, "Update check failed", Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         });
     }
 
     private void showUpdateDialog(String latestVersion, String downloadUrl) {
         new AlertDialog.Builder(context)
-                .setTitle(context.getString(R.string.update_available_title))
-                .setMessage(context.getString(R.string.update_available_message, latestVersion))
-                .setPositiveButton(context.getString(R.string.update_button_download), new DialogInterface.OnClickListener() {
+                .setTitle("Update available")
+                .setMessage("A new version (" + latestVersion + ") of the app is available.")
+                .setPositiveButton("Download", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl));
                         context.startActivity(browserIntent);
                     }
                 })
-                .setNegativeButton(context.getString(R.string.update_button_later), null)
+                .setNegativeButton("Later", null)
                 .show();
     }
 }

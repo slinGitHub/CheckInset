@@ -227,7 +227,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
         //Check for updates
         String currentVersion = getString(R.string.app_vers);
         checker = new UpdateChecker(this, currentVersion);
-        checker.checkForUpdate();
+        checker.checkForUpdate(false);
 
         // Toolbar initialisieren
         Toolbar topAppBar = findViewById(R.id.topAppBar);
@@ -496,7 +496,7 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             loadUIFromDataModel();
             return true;
         } else if (item.getItemId() == R.id.check_for_updates) {
-            checker.checkForUpdate();
+            checker.checkForUpdate(true);
             return true;
         } else if (item.getItemId() == R.id.action_aboutCheckInset) {
             Intent intent_settings_about = new Intent(this, SettingsAboutActivity.class);
