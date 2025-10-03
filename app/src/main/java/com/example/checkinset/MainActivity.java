@@ -217,11 +217,17 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
     private static final String PREFS_NAME = "donation_prefs";
     private static final String KEY_LAST_SHOWN = "donation_last_shown";
 
+    private UpdateChecker checker;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
+
+        //Check for updates
+        String currentVersion = getString(R.string.app_vers);
+        checker = new UpdateChecker(this, currentVersion);
+        checker.checkForUpdate();
 
         // Toolbar initialisieren
         Toolbar topAppBar = findViewById(R.id.topAppBar);
@@ -488,6 +494,9 @@ public class MainActivity extends AppCompatActivity implements ImageManager.Imag
             protectedViewOn = !protectedViewOn; //Toggle protected view
             item.setIcon(protectedViewOn ? R.drawable.ic_wappen_on : R.drawable.ic_wappen_off);
             loadUIFromDataModel();
+            return true;
+        } else if (item.getItemId() == R.id.check_for_updates) {
+            checker.checkForUpdate();
             return true;
         } else if (item.getItemId() == R.id.action_aboutCheckInset) {
             Intent intent_settings_about = new Intent(this, SettingsAboutActivity.class);

@@ -38,6 +38,12 @@
         android:showAsAction="never" />
 
     <item
+        android:id="@+id/check_for_updates"
+        android:title="Check for Updates"
+        android:icon="@android:drawable/ic_menu_delete"
+        android:showAsAction="never" />
+
+    <item
         android:id="@+id/action_aboutCheckInset"
         android:title="About Check Inset"
         android:icon="@android:drawable/ic_menu_delete"
